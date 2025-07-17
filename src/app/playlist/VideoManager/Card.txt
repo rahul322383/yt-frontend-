@@ -1,0 +1,41 @@
+videoManager 
+  all managing file components
+    <uploadVideoCard />
+      <videoCard /> if videos are available or not show status
+      <likeCard>   same as above
+      <commentCard /> same
+      <shareCard />same
+      <deleteCard />
+
+
+
+
+      return(
+        <div>
+         <uploadVideoCard> if dsata is available in playlist based on user playlistID 
+         <videoCard />
+         likeCard
+         commentCard
+         shareCard
+         deleteCard
+         </uploadVideoCard>
+        </div>
+      )
+
+
+// monitoring our performence ui card and it's components  same as uploadVideoCard
+      return()
+
+      const app = require('express)
+      app.get('/', (req, res) =>{
+        res.send('/hello', (req, res) => {
+          res.send('you got hacked')
+          return req;
+        })
+        return req;
+      })
+      app.<div class="alert alert-success" role="alert">
+        <h4 class="alert-heading"></h4>
+        <p></p>
+        <p class="mb-0"></p>
+      </div>
