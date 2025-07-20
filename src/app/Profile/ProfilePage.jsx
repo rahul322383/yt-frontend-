@@ -40,6 +40,7 @@ const profileSchema = z.object({
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [editingField, setEditingField] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key state
   const navigate = useNavigate();
   
   const {
@@ -72,7 +73,7 @@ export default function ProfilePage() {
       }
     };
     fetchProfile();
-  }, [reset]);
+  }, [reset, refreshKey]); // Add refreshKey to dependencies
 
   const onSubmit = async (values) => {
     try {
@@ -80,6 +81,7 @@ export default function ProfilePage() {
       toast.success("Profile updated successfully");
       setProfile(data.data);
       setEditingField(null);
+      setRefreshKey(prev => prev + 1); // Refresh after successful update
     } catch (error) {
       toast.error(error.response?.data?.message || "Update failed");
     }
@@ -92,11 +94,13 @@ export default function ProfilePage() {
   const handleAvatarUpload = (url) => {
     setProfile(prev => ({ ...prev, avatar: url }));
     setValue("avatar", url);
+    setRefreshKey(prev => prev + 1); // Refresh after avatar upload
   };
 
   const handleCoverUpload = (url) => {
     setProfile(prev => ({ ...prev, coverImage: url }));
     setValue("coverImage", url);
+    setRefreshKey(prev => prev + 1); // Refresh after cover upload
   };
 
   return (
@@ -143,6 +147,7 @@ export default function ProfilePage() {
                         Profile Picture
                       </Label>
                       <AvatarUpload 
+                        key={`avatar-${refreshKey}`} // Add key to force re-render
                         avatarUrl={profile?.avatar} 
                         onUpload={handleAvatarUpload}
                         className="mx-auto"
@@ -153,6 +158,7 @@ export default function ProfilePage() {
                         Cover Image
                       </Label>
                       <CoverUpload 
+                        key={`cover-${refreshKey}`} // Add key to force re-render
                         coverUrl={profile?.coverImage} 
                         onUpload={handleCoverUpload}
                         className="w-full"

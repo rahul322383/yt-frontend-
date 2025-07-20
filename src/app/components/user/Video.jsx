@@ -1,21 +1,26 @@
+/* eslint-disable no-unused-vars */
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../../utils/axiosInstance.jsx";
 import LikeButton from "../VideoCard/likeButton.jsx";
 import VideoDetailPage from "../VideoCard/VideoDetailsPage.jsx";
+import { FiPlay, FiClock, FiVolume2, FiVolumeX } from "react-icons/fi";
+import { BsBookmarkCheck, BsBookmarkPlus } from "react-icons/bs";
+import toast from "react-hot-toast";
 
 const VideoCardSkeleton = () => (
-  <div className="flex gap-4 border rounded-xl p-4 shadow-sm animate-pulse bg-gray-100 dark:bg-gray-700">
-    <div className="w-40 h-24 bg-gray-300 rounded-lg" />
+  <div className="flex gap-4 border rounded-xl p-4 shadow-sm animate-pulse bg-gray-100 dark:bg-gray-800">
+    <div className="w-40 h-24 bg-gray-300 dark:bg-gray-700 rounded-lg" />
     <div className="flex-1 space-y-3 py-1">
-      <div className="h-5 bg-gray-300 rounded w-3/4" />
-      <div className="h-4 bg-gray-200 rounded w-1/2" />
-      <div className="h-4 bg-gray-200 rounded w-full" />
+      <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded w-3/4" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-full" />
     </div>
   </div>
 );
 
-// ChannelAvatar with skeleton loader
 const ChannelAvatar = ({ src, username }) => {
   const [loaded, setLoaded] = useState(false);
   return (
@@ -43,20 +48,17 @@ const VideoCard = ({
 }) => {
   const [hover, setHover] = useState(false);
   const [muted, setMuted] = useState(true);
-
   const isWatchLater = watchLaterList.includes(video._id);
 
   return (
     <div
-      className="flex gap-3 sm:gap-4 border rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-all bg-white dark:bg-gray-900 relative"
+      className="flex flex-col sm:flex-row gap-3 border rounded-lg p-3 shadow-sm hover:shadow-md transition-all bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      tabIndex={0}
-      role="button"
       onClick={() => onVideoClick(video)}
     >
       {/* Video Preview */}
-      <div className="relative w-32 sm:w-44 h-20 sm:h-28 flex-shrink-0 rounded-md overflow-hidden">
+      <div className="relative w-full sm:w-44 h-40 sm:h-28 rounded-md overflow-hidden">
         <video
           src={video.videoUrl}
           className="absolute w-full h-full object-cover"
@@ -65,32 +67,41 @@ const VideoCard = ({
           loop
           playsInline
         />
+        <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
+            <FiPlay className="text-white text-xl ml-1" />
+          </div>
+        </div>
         <button
           onClick={(e) => {
             e.stopPropagation();
             setMuted(!muted);
           }}
-          className="absolute bottom-1 right-1 text-xs bg-black/50 text-white px-2 py-0.5 rounded"
+          className="absolute bottom-2 right-2 p-1.5 bg-black/50 text-white rounded-full"
         >
-          {muted ? "🔇" : "🔊"}
+          {muted ? <FiVolumeX size={14} /> : <FiVolume2 size={14} />}
         </button>
+        <div className="absolute bottom-2 left-2 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">
+          {video.duration || "0:00"}
+        </div>
       </div>
 
       {/* Meta info */}
       <div className="flex flex-col justify-between flex-1">
-        <div className="mb-1">
+        <div className="mb-2">
           <h3 className="text-base sm:text-lg font-semibold line-clamp-2 dark:text-white">
             {video.title}
           </h3>
           <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-2 mt-1">
             <span>{video.views.toLocaleString()} views</span>
+            <span>•</span>
             <span>{new Date(video.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
           <div
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-black cursor-pointer dark:text-gray-300"
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
             onClick={(e) => {
               e.stopPropagation();
               onChannelClick(video);
@@ -100,23 +111,26 @@ const VideoCard = ({
               src={video.owner?.avatar}
               username={video.owner?.username}
             />
-            <span>{video.owner?.username}</span>
+            <span className="truncate max-w-[120px] sm:max-w-[160px]">
+              {video.owner?.username}
+            </span>
           </div>
 
-          <div className="flex gap-2 items-center text-xs">
+          <div className="flex gap-2 items-center">
             <LikeButton videoId={video._id} initialLikes={video.likeCount} />
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onWatchLaterToggle(video._id);
               }}
-              className={`px-2 py-1 rounded-full text-white ${
+              className={`p-2 rounded-full ${
                 isWatchLater
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-blue-600 hover:bg-blue-700"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
               }`}
+              aria-label={isWatchLater ? "Remove from watch later" : "Add to watch later"}
             >
-              {isWatchLater ? "✓" : "+"}
+              {isWatchLater ? <BsBookmarkCheck size={18} /> : <BsBookmarkPlus size={18} />}
             </button>
           </div>
         </div>
@@ -124,7 +138,6 @@ const VideoCard = ({
     </div>
   );
 };
-
 
 const Video = () => {
   const navigate = useNavigate();
@@ -143,11 +156,7 @@ const Video = () => {
   const limit = 10;
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    document.documentElement.classList.toggle("dark", darkMode);
     localStorage.setItem("darkMode", JSON.stringify(darkMode));
   }, [darkMode]);
 
@@ -180,20 +189,18 @@ const Video = () => {
 
   const totalPages = Math.ceil(total / limit);
 
-  // Watch Later toggle with backend syncing
   const onWatchLaterToggle = async (videoId) => {
     try {
       if (watchLaterList.includes(videoId)) {
-        // Remove
         await API.delete(`/users/watch-later/${videoId}`, { withCredentials: true });
         setWatchLaterList((prev) => prev.filter((id) => id !== videoId));
       } else {
-        // Add
         await API.post(`/users/watch-later/${videoId}`, {}, { withCredentials: true });
         setWatchLaterList((prev) => [...prev, videoId]);
       }
     } catch (err) {
       alert("Failed to update Watch Later");
+      toast.err("Failed to update Watch Later");
     }
   };
 
@@ -210,67 +217,64 @@ const Video = () => {
     const channelId = video.channelId || video.owner?._id;
     if (channelId) {
       navigate(`/channel/${channelId}`);
-    } else {
-      console.error("Channel ID not found for video:", video);
     }
   };
 
-  // Get first playlist ID for Play All button
-  const firstPlaylistId =
-    videos.find((v) => v.playlistId?.[0])?.playlistId?.[0] || null;
+  const firstPlaylistId = videos.find((v) => v.playlistId?.[0])?.playlistId?.[0] || null;
 
   return (
-    <main className="max-w-6xl mx-auto p-6 relative bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
-      {/* Dark Mode toggle */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setDarkMode((d) => !d)}
-          className="px-3 py-1 bg-gray-300 dark:bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Toggle dark mode"
-        >
-          {darkMode ? "🌙 Dark" : "☀️ Light"}
-        </button>
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Videos</h1>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <input
+            type="search"
+            placeholder="Search videos..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="flex-1 sm:w-64 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+          />
+          <button
+            onClick={() => setDarkMode((d) => !d)}
+            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? "🌙" : "☀️"}
+          </button>
+        </div>
       </div>
 
-      <div className="flex justify-center mb-6">
-        <input
-          type="search"
-          placeholder="Search videos..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="w-full max-w-lg border border-gray-300 rounded-md p-3 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
-          aria-label="Search videos"
-        />
-      </div>
-
-      {/* Playlist Play All button */}
+      {/* Play All button */}
       {firstPlaylistId && (
-        <div className="flex justify-end mb-4">
+        <div className="mb-6">
           <button
             onClick={() => navigate(`/playlists/${firstPlaylistId}`)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-500"
-            aria-label="Play all videos in this playlist"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
-            ▶️ Play All
+            <FiPlay /> Play All Videos
           </button>
         </div>
       )}
 
+      {/* Video List */}
       {loading ? (
-        <div className="space-y-6">
+        <div className="grid gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <VideoCardSkeleton key={i} />
           ))}
         </div>
       ) : videos.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 text-lg">
-          No videos found.
-        </p>
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
+            No videos found. Try a different search.
+          </p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4">
           {videos.map((video) => (
             <VideoCard
               key={video._id}
@@ -284,24 +288,23 @@ const Video = () => {
         </div>
       )}
 
+      {/* Pagination */}
       {!loading && videos.length > 0 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
+        <div className="flex justify-center items-center gap-4 mt-8">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-5 py-2 rounded-md bg-gray-200 disabled:opacity-50 hover:bg-gray-300 transition dark:bg-gray-700 dark:hover:bg-gray-600"
-            aria-label="Previous page"
+            className="px-4 py-2 rounded-md bg-gray-200 disabled:opacity-50 hover:bg-gray-300 transition dark:bg-gray-700 dark:hover:bg-gray-600"
           >
-            Prev
+            Previous
           </button>
-          <span className="text-gray-700 font-medium dark:text-gray-300">
+          <span className="text-gray-700 dark:text-gray-300">
             Page {page} of {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-5 py-2 rounded-md bg-gray-200 disabled:opacity-50 hover:bg-gray-300 transition dark:bg-gray-700 dark:hover:bg-gray-600"
-            aria-label="Next page"
+            className="px-4 py-2 rounded-md bg-gray-200 disabled:opacity-50 hover:bg-gray-300 transition dark:bg-gray-700 dark:hover:bg-gray-600"
           >
             Next
           </button>

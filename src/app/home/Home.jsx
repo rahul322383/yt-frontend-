@@ -334,7 +334,6 @@
 
 // export default HomePage;
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -349,6 +348,7 @@ import {
   FaSun,
   FaHome,
   FaFire,
+  FaTh, 
   FaHistory,
   FaClock,
   FaThumbsUp,
@@ -385,20 +385,17 @@ const VideoCard = ({ video }) => {
       onClick={() => navigate(`/video/${id}`)}
     >
       <div className="bg-blue-250 dark:bg-gray-800 hover:shadow-lg transition-all overflow-hidden cursor-pointer rounded-lg shadow-sm">
-       <div className="relative pb-[110px] pt-10 cursor-pointer">
-
+        <div className="relative pb-[56.25%] cursor-pointer">
           <ReactPlayer
             url={video.videoUrl}
             controls={isHovered}
-            // playing={isHovered}
             width="100%"
             height="100%"
             className="absolute top-0 left-0 cursor-pointer"
             muted
-         
           />
         </div>
-        <div className="p-1 space-y-1">
+        <div className="p-4 space-y-1">
           <h3 className="text-md font-semibold truncate text-gray-900 dark:text-white">
             {video.title || "Untitled Video"}
           </h3>
@@ -406,7 +403,7 @@ const VideoCard = ({ video }) => {
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                window.location.href = `/channel/${video.channelId}`;
+                navigate(`/channel/${video.channelId}`);
               }}
               className="text-blue-600 hover:underline cursor-pointer"
             >
@@ -437,7 +434,7 @@ const SidebarItem = ({ to, icon: Icon, label, isActive }) => (
   </Link>
 );
 
-// Main Home Page
+// Main Home Page Component
 const HomePage = ({ initialView = "trending" }) => {
   const [auth, setAuth] = useState({
     user: null,
@@ -460,8 +457,8 @@ const HomePage = ({ initialView = "trending" }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-          const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-         if (!token) {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
           setAuth({ user: null, isAuthenticated: false, loading: false });
           return;
         }
@@ -475,12 +472,12 @@ const HomePage = ({ initialView = "trending" }) => {
         if (data?.data) {
           setAuth({ user: data.data, isAuthenticated: true, loading: false });
         } else {
-          Cookies.remove("accessToken");
+          localStorage.removeItem("accessToken");
           setAuth({ user: null, isAuthenticated: false, loading: false });
         }
       } catch (error) {
         console.error("Auth error:", error);
-        Cookies.remove("accessToken");
+        localStorage.removeItem("accessToken");
         setAuth({ user: null, isAuthenticated: false, loading: false });
       }
     };
@@ -581,8 +578,9 @@ const HomePage = ({ initialView = "trending" }) => {
     try {
       await API.post("/users/logout", {}, { withCredentials: true });
       setAuth({ user: null, isAuthenticated: false, loading: false });
-      Cookies.remove("accessToken");
-      navigate("/login");
+      localStorage.removeItem("accessToken");
+      navigate("/");
+      toast.success("Logged out successfully");
     } catch (err) {
       console.error("Logout Error:", err);
       toast.error("Logout failed!");
@@ -655,7 +653,6 @@ const HomePage = ({ initialView = "trending" }) => {
 
           {auth.isAuthenticated ? (
             <>
-             
               <div className="relative">
                 <Link to="/notifications" className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                   <FaBell className="text-xl text-gray-700 dark:text-white" />
@@ -689,17 +686,16 @@ const HomePage = ({ initialView = "trending" }) => {
                         {route.charAt(0).toUpperCase() + route.slice(1)}
                       </Link>
                     ))}
-                   <Link
-  to="#"
-  onClick={(e) => {
-    e.preventDefault(); // ⛔ prevent page reload
-    handleLogout();     // 🔥 call your logout function
-  }}
-  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
->
-  <FaSignOutAlt /> Sign Out
-</Link>
-
+                    <Link
+                      to="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLogout();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <FaSignOutAlt /> Sign Out
+                    </Link>
                   </div>
                 )}
               </div>
@@ -737,11 +733,18 @@ const HomePage = ({ initialView = "trending" }) => {
                 isActive={isActive("/trending")} 
               />
               <SidebarItem 
+  to="/dashboard" 
+  icon={FaTh} // Changed from FaHistory to FaTh
+  label="dashboard" 
+  isActive={isActive("/dashboard")} 
+/>
+              <SidebarItem 
                 to="/subscriptions" 
                 icon={MdSubscriptions} 
                 label="Subscriptions" 
                 isActive={isActive("/subscriptions")} 
               />
+             
             </div>
 
             {auth.isAuthenticated && (
