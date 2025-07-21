@@ -732,12 +732,7 @@ const HomePage = ({ initialView = "trending" }) => {
                 label="Trending" 
                 isActive={isActive("/trending")} 
               />
-              <SidebarItem 
-  to="/dashboard" 
-  icon={FaTh} // Changed from FaHistory to FaTh
-  label="dashboard" 
-  isActive={isActive("/dashboard")} 
-/>
+             
               <SidebarItem 
                 to="/subscriptions" 
                 icon={MdSubscriptions} 
@@ -753,7 +748,13 @@ const HomePage = ({ initialView = "trending" }) => {
                   <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Library
                   </h3>
-                  <div className="space-y-1">
+                  <div className="space-y-1 hover:bg-gray-200 dark:hover:bg-gray-700">
+                     <SidebarItem 
+  to="/dashboard" 
+  icon={FaTh} // Changed from FaHistory to FaTh
+  label="dashboard" 
+  isActive={isActive("/dashboard")} 
+/>
                     <SidebarItem 
                       to="/playlists" 
                       icon={FaBookmark} 

@@ -84,7 +84,6 @@ const Dashboard = () => {
             ? playlistsRes.data.data.flatMap((p) => p.videos || [])
             : [],
         });
-        console.log("Dashboard Data:", dashboardData);
       } catch (err) {
         console.error("Dashboard Error:", err);
         setError("Failed to load dashboard data.");
@@ -166,7 +165,7 @@ const Dashboard = () => {
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <header className="flex justify-between items-center mb-8">
-          <button
+          {/* <button
             className="md:hidden p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={() => setMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
@@ -180,7 +179,7 @@ const Dashboard = () => {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </button>
+          </button> */}
           
           <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Creator Dashboard

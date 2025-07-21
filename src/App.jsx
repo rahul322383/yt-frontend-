@@ -37,6 +37,7 @@ import ShortsPage from "./app/home/shortvideo.jsx";
 import UploadShortsForm from "./app/components/VideoCard/uploadShortform.jsx";
 import NotificationPage from "./app/home/Notification.jsx";
 import SearchBar from "./app/home/SearchBar.jsx";
+import SettingsPageHome from "./app/home/homesettingpage.jsx";
 // import ThemeProvider from "./context/theme.js";
 
 // Components
@@ -151,7 +152,7 @@ const App = () => {
         <Route
           path="/settings"
           element={
-            <SettingsPage user={user} setUser={setUser} />
+            <SettingsPageHome user={user} setUser={setUser} />
           }
         />
 

@@ -1,147 +1,201 @@
+/* eslint-disable no-unused-vars */
+
+
 "use client";
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import API from "../../../utils/axiosInstance.jsx"; // ✅ make sure this is axios instance with baseURL
+import { Loader2, UploadCloud, User, X } from "lucide-react";
+import API from "../../../utils/axiosInstance";
 
-export default function AvatarUpload({ avatarUrl, onUpload }) {
+const sizeClasses = {
+  sm: {
+    container: "w-20 h-20",
+    icon: "w-5 h-5"
+  },
+  md: {
+    container: "w-32 h-32",
+    icon: "w-6 h-6"
+  },
+  lg: {
+    container: "w-40 h-40",
+    icon: "w-8 h-8"
+  },
+  xl: {
+    container: "w-48 h-48",
+    icon: "w-10 h-10"
+  }
+};
+
+export default function AvatarUpload({ 
+  avatarUrl, 
+  onUpload,
+  onDelete,
+  size = "lg",
+  className = ""
+}) {
   const inputRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
-  const handleFile = useCallback(async (file) => {
+  // Get size classes with fallback to 'lg' if invalid size is provided
+  const sizeConfig = sizeClasses[size] || sizeClasses.lg;
+
+  const handleFileChange = async (file) => {
     if (!file) return;
 
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      toast.error("Only JPEG, PNG, or WebP images are allowed");
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file (JPEG, PNG, WEBP)");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size exceeds 2MB limit");
       return;
     }
 
     const formData = new FormData();
-    formData.append("avatar", file); // field name must match multer
+    formData.append("avatar", file);
 
     try {
       setLoading(true);
+    const response = await API.put("/users/update-avatar", formData, {
+  headers: { "Content-Type": "multipart/form-data" },
+});
 
-      const res = await API.put("/users/update-avatar", formData, {
 
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
-
-      const { success, data, message } = res.data;
-
-      if (!success || !data?.avatar) {
-        throw new Error(message || "Upload failed");
+      if (response.data.success) {
+        onUpload(response.data.data.avatar);
+        toast.success("Profile picture updated successfully!");
+      } else {
+        throw new Error(response.data.message || "Failed to upload avatar");
       }
-
-      const updatedAvatar = `${data.avatar}?t=${Date.now()}`; // prevent cache
-      toast.success("Avatar updated successfully!");
-      onUpload?.(updatedAvatar);
-    } catch (err) {
-      const { response } = err;
-      const msg =
-        response?.data?.message ||
-        (response?.status === 401
-          ? "Session expired. Login again."
-          : "Something went wrong");
-
-      toast.error(msg);
-
-      if (response?.status === 401) {
-        localStorage.clear();
-        window.location.href = "/login";
-      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(error.response?.data?.message || "Failed to upload profile picture");
     } finally {
       setLoading(false);
-      inputRef.current.value = "";
     }
-  }, [onUpload]);
+  };
 
-  const handleFileChange = useCallback((e) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+  const handleInputChange = (e) => {
+    handleFileChange(e.target.files?.[0]);
+    e.target.value = "";
+  };
 
-  const handleDrop = useCallback((e) => {
+  const handleDrag = (e) => {
     e.preventDefault();
-    setIsDragging(false);
+    e.stopPropagation();
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
+  };
 
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
-
-  const handleDragOver = useCallback((e) => {
+  const handleDrop = (e) => {
     e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  const handleClick = useCallback(() => {
-    if (!loading && inputRef.current) {
-      inputRef.current.click();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
     }
-  }, [loading]);
+  };
+
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      const response = await API.delete("/users/remove-avatar");
+      
+      if (response.data.success) {
+        onDelete();
+        toast.success("Profile picture removed successfully!");
+      } else {
+        throw new Error(response.data.message || "Failed to remove avatar");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(error.response?.data?.message || "Failed to remove profile picture");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <motion.div
-      className={`relative w-32 h-32 rounded-full overflow-hidden border-2 cursor-pointer transition ${
-        isDragging
-          ? "border-green-500 bg-green-100 dark:bg-zinc-700"
-          : loading
-          ? "border-blue-400 animate-pulse"
-          : "border-gray-300 dark:border-zinc-700"
-      }`}
-      whileHover={!loading ? { scale: 1.03 } : {}}
-      onClick={handleClick}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      tabIndex={0}
-      role="button"
-    >
-      {loading ? (
-        <div className="flex items-center justify-center w-full h-full bg-gray-200 dark:bg-zinc-800">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-600 dark:text-white" />
+    <div className={`relative group ${className}`}>
+      <motion.div
+        className={`${sizeConfig.container} rounded-full border-2 border-dashed 
+          ${dragActive ? "border-primary bg-primary/10" : "border-muted"}
+          cursor-pointer transition-colors duration-200 overflow-hidden flex items-center justify-center`}
+        whileHover={{ scale: 1.03 }}
+        onClick={() => inputRef.current?.click()}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        {loading ? (
+          <div className="flex items-center justify-center w-full h-full bg-muted">
+            <Loader2 className={`${sizeConfig.icon} animate-spin text-primary`} />
+          </div>
+        ) : avatarUrl ? (
+          <>
+            <img
+              src={avatarUrl}
+              alt="Profile"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = "/default-avatar.jpg";
+              }}
+            />
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <button
+                className="bg-background/80 hover:bg-background text-foreground p-2 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  inputRef.current?.click();
+                }}
+              >
+                <UploadCloud className="w-4 h-4" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center w-full h-full bg-muted gap-2">
+            <User className={`${sizeConfig.icon} text-muted-foreground`} />
+            <p className="text-xs text-center text-muted-foreground">
+              Click to upload
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {avatarUrl && !loading && (
+        <button
+          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+
+      {dragActive && (
+        <div className="absolute inset-0 border-4 border-dashed border-primary rounded-full pointer-events-none flex items-center justify-center bg-primary/10 backdrop-blur-sm">
+          <div className="text-center p-2 bg-background rounded-lg shadow-lg border">
+            <UploadCloud className="w-6 h-6 mx-auto text-primary mb-1" />
+            <p className="text-xs">Drop to upload</p>
+          </div>
         </div>
-      ) : (
-        <>
-          <img
-            src={avatarUrl || "/default-avatar.png"}
-            alt="User Avatar"
-            className="w-full h-full object-cover"
-            draggable={false}
-            loading="lazy"
-            onError={(e) => {
-              e.target.src = "/default-avatar.png";
-            }}
-          />
-          <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity" />
-        </>
       )}
 
       <input
-        ref={inputRef}
         type="file"
-        accept="image/png, image/jpeg, image/webp"
+        accept="image/*"
+        onChange={handleInputChange}
+        ref={inputRef}
         className="hidden"
-        onChange={handleFileChange}
-        disabled={loading}
       />
-
-      <div className="absolute bottom-0 w-full text-center bg-black/50 text-white text-xs py-1 pointer-events-none">
-        {isDragging ? "Drop to upload" : "Change avatar"}
-      </div>
-    </motion.div>
+    </div>
   );
 }

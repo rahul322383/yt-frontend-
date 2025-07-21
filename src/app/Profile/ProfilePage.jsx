@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,42 +6,61 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import AvatarUpload from "../components/common/AvatarUpload.jsx";
-import CoverUpload from "../components/common/ProfileUpload.jsx";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs.jsx";
-import ProfileEditModal from "../profile/ProfileEditModel.jsx";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
+import {
+  Loader2,
+  Lock,
+  ShieldCheck,
+  Link2,
+  Heart,
+  Code,
+  Mail,
+  Globe,
+  MapPin,
+  User,
+  Calendar,
+} from "lucide-react";
+import API from "../../utils/axiosInstance";
+
+// Components
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../components/ui/tabs";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
   CardDescription,
-  CardContent, 
-  CardFooter 
-} from "../components/ui/card.jsx";
-import { Button } from "../components/ui/button.jsx";
-import { Input } from "../components/ui/Input.jsx";
-import Label from "../components/ui/label.jsx";
-import { Badge } from "../components/ui/badge.jsx";
-import { Separator } from "../components/ui/separator.jsx";
-import API from "../../utils/axiosInstance.jsx";
+  CardContent,
+  CardFooter,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/Input";
+import Label from "../components/ui/label";
+import { Badge } from "../components/ui/badge";
+import { Separator } from "../components/ui/separator";
+import AvatarUpload from "../components/common/AvatarUpload";
+import CoverUpload from "../components/common/Cover";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   username: z.string().min(1, "Username is required"),
-  email: z.string().email(),
+  email: z.string().email("Invalid email address"),
   bio: z.string().max(160).optional(),
-  location: z.string().optional(),
-  website: z.string().url().optional(),
-  avatar: z.any().optional(),
-  coverImage: z.any().optional(),
+  location: z.string().max(50).optional(),
+  website: z.string().url().or(z.literal("")).optional(),
+  avatar: z.string().optional(),
+  coverImage: z.string().optional(),
 });
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [editingField, setEditingField] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key state
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
-  
+
   const {
     register,
     setValue,
@@ -52,14 +70,6 @@ export default function ProfilePage() {
     formState: { isSubmitting, errors },
   } = useForm({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      username: "",
-      email: "",
-      bio: "",
-      location: "",
-      website: "",
-    },
   });
 
   useEffect(() => {
@@ -70,10 +80,11 @@ export default function ProfilePage() {
         reset(data.data);
       } catch (error) {
         toast.error("Failed to fetch profile data");
+        console.error("Profile fetch error:", error);
       }
     };
     fetchProfile();
-  }, [reset, refreshKey]); // Add refreshKey to dependencies
+  }, [reset, refreshKey]);
 
   const onSubmit = async (values) => {
     try {
@@ -81,8 +92,9 @@ export default function ProfilePage() {
       toast.success("Profile updated successfully");
       setProfile(data.data);
       setEditingField(null);
-      setRefreshKey(prev => prev + 1); // Refresh after successful update
+      setRefreshKey((prev) => prev + 1);
     } catch (error) {
+      console.error("Profile update error:", error);
       toast.error(error.response?.data?.message || "Update failed");
     }
   };
@@ -92,257 +104,389 @@ export default function ProfilePage() {
   };
 
   const handleAvatarUpload = (url) => {
-    setProfile(prev => ({ ...prev, avatar: url }));
     setValue("avatar", url);
-    setRefreshKey(prev => prev + 1); // Refresh after avatar upload
+    setRefreshKey((prev) => prev + 1);
+    toast.success("Avatar uploaded successfully");
   };
 
   const handleCoverUpload = (url) => {
-    setProfile(prev => ({ ...prev, coverImage: url }));
     setValue("coverImage", url);
-    setRefreshKey(prev => prev + 1); // Refresh after cover upload
+    setRefreshKey((prev) => prev + 1);
+    toast.success("Cover photo updated");
+  };
+
+  const fieldIcons = {
+    name: <User className="w-4 h-4 mr-2" />,
+    email: <Mail className="w-4 h-4 mr-2" />,
+    website: <Globe className="w-4 h-4 mr-2" />,
+    location: <MapPin className="w-4 h-4 mr-2" />,
+    bio: <span className="w-4 h-4 mr-2">📝</span>,
+    username: <span className="w-4 h-4 mr-2">@</span>,
+  };
+
+  const tabIcons = {
+    profile: <ShieldCheck className="w-4 h-4 mr-2" />,
+    social: <Link2 className="w-4 h-4 mr-2" />,
+    interests: <Heart className="w-4 h-4 mr-2" />,
+    skills: <Code className="w-4 h-4 mr-2" />,
   };
 
   return (
-    <div className="flex w-full px-4 py-6 max-w-4xl mx-auto space-y-8 sm:px-6 lg:px-8">
+    <div className="w-full px-4 py-6 max-w-7xl mx-auto">
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2 bg-muted p-2 rounded-lg">
+        {/* Enhanced Tabs with better styling */}
+        <TabsList className="grid w-full grid-cols-2 sm:flex gap-2 bg-muted/50 p-1.5 rounded-xl mb-6 backdrop-blur-sm border">
           {["profile", "social", "interests", "skills"].map((tab) => (
-            <TabsTrigger 
+            <TabsTrigger
               key={tab}
               value={tab}
-              className="py-2 text-sm font-medium transition-all capitalize
-                data-[state=active]:bg-background data-[state=active]:text-foreground
-                data-[state=active]:shadow-sm rounded-md hover:text-foreground/80"
+              className="py-2 px-4 text-sm font-medium transition-all capitalize
+                data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg
+                data-[state=active]:text-primary hover:text-foreground/80
+                flex items-center justify-center gap-1.5"
             >
-              {tab}
+              {tabIcons[tab]}
+              <span>{tab}</span>
             </TabsTrigger>
           ))}
         </TabsList>
 
+        {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
-          {/* Profile Card */}
+          {/* Profile Card with improved layout */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="border shadow-sm rounded-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-                  Profile Information
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Update your profile details and images
-                </CardDescription>
-              </CardHeader>
-              
-              <Separator className="my-4" />
-              
-              <CardContent>
-                <div className="flex flex-col gap-8 lg:flex-row">
-                  <div className="w-full lg:w-1/3 space-y-6">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium text-foreground">
-                        Profile Picture
-                      </Label>
-                      <AvatarUpload 
-                        key={`avatar-${refreshKey}`} // Add key to force re-render
-                        avatarUrl={profile?.avatar} 
-                        onUpload={handleAvatarUpload}
-                        className="mx-auto"
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium text-foreground">
-                        Cover Image
-                      </Label>
-                      <CoverUpload 
-                        key={`cover-${refreshKey}`} // Add key to force re-render
-                        coverUrl={profile?.coverImage} 
-                        onUpload={handleCoverUpload}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
+            <Card className="border shadow-sm rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm">
+              {/* Cover Image with gradient overlay */}
+              <div className="w-full px-4 sm:px-12 md:px-20 lg:px-32 xl:px-60">
+  <CoverUpload
+    key={`cover-${refreshKey}`}
+    coverUrl={profile?.coverImage}
+    onUpload={handleCoverUpload}
+  />
+</div>
 
-                  <form className="w-full lg:w-2/3 space-y-6">
-                    {["name", "username", "email", "bio", "location", "website"].map((field) => (
-                      <div key={field} className="grid grid-cols-1 sm:grid-cols-4 items-start gap-4">
-                        <Label 
-                          htmlFor={field} 
-                          className="sm:text-right capitalize sm:col-span-1 pt-2 text-sm font-medium text-foreground"
-                        >
-                          {field}
-                        </Label>
-                        <div className="sm:col-span-2 space-y-1">
-                          <Input
-                            id={field}
-                            {...register(field)}
-                            defaultValue={watch(field) || ""}
-                            className="w-full text-foreground"
-                            readOnly={editingField !== field}
-                          />
-                          {errors[field] && (
-                            <p className="text-sm text-destructive">
-                              {errors[field].message}
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant={editingField === field ? "secondary" : "outline"}
-                          size="sm"
-                          onClick={() => handleFieldEdit(field)}
-                          className="sm:col-span-1 w-full sm:w-auto"
-                        >
-                          {editingField === field ? "Cancel" : "Edit"}
-                        </Button>
+              
+              <div className="relative px-4 sm:px-6">
+                {/* Avatar with better positioning */}
+                <div className="flex -mt-16 sm:-mt-20 z-10">
+                  <AvatarUpload
+                    key={`avatar-${refreshKey}`}
+                    avatarUrl={profile?.avatar} 
+                    onUpload={handleAvatarUpload}
+                    className="border-4 border-background rounded-full shadow-lg"
+                  />
+                </div>
+
+                <CardHeader className="pb-4 pt-6 px-0">
+                  <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">
+                    {profile?.name || "Your Profile"}
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                    {profile?.bio || "Tell us about yourself"}
+                  </CardDescription>
+                </CardHeader>
+                
+                <Separator className="mb-6 bg-border/50" />
+                
+                <CardContent className="px-0">
+                  <form className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                      <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                        {["name", "username", "email", "bio", "location", "website"].map((field) => (
+                          <div key={field} className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
+                            <Label 
+                              htmlFor={field} 
+                              className="sm:text-right capitalize sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
+                            >
+                              {fieldIcons[field]}
+                              <span className="hidden sm:inline">{field}</span>
+                            </Label>
+                            <div className="sm:col-span-2 space-y-1">
+                              {field === "bio" ? (
+                                <textarea
+                                  id={field}
+                                  {...register(field)}
+                                  defaultValue={watch(field) || ""}
+                                  readOnly={editingField !== field}
+                                  className={`w-full min-h-[100px] rounded-lg border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${
+                                    editingField === field ? 'ring-2 ring-primary bg-background shadow-sm' : 'bg-muted/20'
+                                  } ${!watch(field) ? 'text-muted-foreground italic' : ''}`}
+                                  placeholder={!watch(field) ? `Add your ${field}...` : ''}
+                                />
+                              ) : (
+                                <Input
+                                  id={field}
+                                  {...register(field)}
+                                  defaultValue={watch(field) || ""}
+                                  readOnly={editingField !== field}
+                                  className={`rounded-lg transition-all ${
+                                    editingField === field ? 'ring-2 ring-primary bg-background shadow-sm' : 'bg-muted/20'
+                                  } ${!watch(field) ? 'text-muted-foreground italic' : ''}`}
+                                  placeholder={!watch(field) ? `Add your ${field}...` : ''}
+                                />
+                              )}
+                              {errors[field] && (
+                                <p className="text-sm text-destructive mt-1">
+                                  {errors[field].message}
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant={editingField === field ? "secondary" : "outline"}
+                              size="sm"
+                              onClick={() => handleFieldEdit(field)}
+                              className="sm:col-span-1 w-full sm:w-auto h-9"
+                            >
+                              {editingField === field ? "Cancel" : watch(field) ? "Edit" : "Add"}
+                            </Button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </form>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-6">
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Last updated: {new Date().toLocaleDateString()}
-                  </Badge>
-                  {profile?.verified && (
-                    <Badge variant="default">
-                      <span className="flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        Verified Account
-                      </span>
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-              
-              <Separator className="my-6" />
-              
-              <CardFooter className="pt-6 flex flex-col sm:flex-row justify-between gap-3">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate("/settings")}
-                  className="w-full sm:w-auto text-foreground"
-                >
-                  Back to Settings
-                </Button>
-                <div className="flex gap-3 w-full sm:w-auto">
+                      {/* Right sidebar with stats */}
+                      <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+                        {/* Stats Card with glass effect */}
+                        <Card className="border shadow-sm rounded-xl bg-background/50 backdrop-blur-sm">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                              <ShieldCheck className="w-5 h-5 text-primary" />
+                              Profile Stats
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                              <span className="text-sm text-muted-foreground flex items-center">
+                                <Calendar className="w-4 h-4 mr-2" />
+                                Member since
+                              </span>
+                              <span className="text-sm font-medium">
+                                {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                              <span className="text-sm text-muted-foreground">
+                                Last updated
+                              </span>
+                              <span className="text-sm font-medium">
+                                {profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : "N/A"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                              <span className="text-sm text-muted-foreground">
+                                Profile views
+                              </span>
+                              <span className="text-sm font-medium">
+                                {profile?.views || "0"}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Verification Status */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-medium flex items-center gap-2">
+                            <Lock className="w-4 h-4" />
+                            Account Status
+                          </Label>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge 
+                              variant={profile?.verified ? "default" : "outline"} 
+                              className="text-xs sm:text-sm px-3 py-1 rounded-lg"
+                            >
+                              {profile?.verified ? (
+                                <span className="flex items-center gap-1.5">
+                                  <ShieldCheck className="w-3.5 h-3.5" />
+                                  Verified
+                                </span>
+                              ) : "Not Verified"}
+                            </Badge>
+                            <Badge 
+                              variant={profile?.twoFactorEnabled ? "default" : "outline"} 
+                              className="text-xs sm:text-sm px-3 py-1 rounded-lg"
+                            >
+                              {profile?.twoFactorEnabled ? (
+                                <span className="flex items-center gap-1.5">
+                                  <Lock className="w-3.5 h-3.5" />
+                                  2FA Enabled
+                                </span>
+                              ) : "2FA Disabled"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </CardContent>
+                
+                <Separator className="my-4 sm:my-6 bg-border/50" />
+                
+                <CardFooter className="px-0 pb-0 flex flex-col sm:flex-row justify-between gap-3 sm:gap-4">
                   <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => setEditingField(null)}
-                    className="w-full"
+                    variant="ghost" 
+                    onClick={() => navigate("/settings")}
+                    className="w-full sm:w-auto order-2 sm:order-1"
                   >
-                    Cancel
+                    Back to Settings
                   </Button>
-                  <Button 
-                    type="submit" 
-                    onClick={handleSubmit(onSubmit)}
-                    disabled={isSubmitting}
-                    className="w-full"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Saving...
-                      </span>
-                    ) : "Save Changes"}
-                  </Button>
-                </div>
-              </CardFooter>
+                  <div className="flex gap-3 w-full sm:w-auto order-1 sm:order-2">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setEditingField(null)}
+                      className="w-full"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      onClick={handleSubmit(onSubmit)}
+                      disabled={isSubmitting}
+                      className="w-full"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                          Saving...
+                        </span>
+                      ) : "Save Changes"}
+                    </Button>
+                  </div>
+                </CardFooter>
+              </div>
             </Card>
           </motion.div>
 
-          {/* Security Card */}
+          {/* Security Card with modern styling */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <Card className="border shadow-sm rounded-lg">
+            <Card className="border shadow-sm rounded-xl bg-background/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-                  Security
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Manage your account security settings
-                </CardDescription>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Lock className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
+                      Security
+                    </CardTitle>
+                    <CardDescription className="text-sm sm:text-base">
+                      Manage your account security settings
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               
-              <Separator className="mb-6" />
+              <Separator className="mb-4 sm:mb-6 bg-border/50" />
               
-              <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4">
+              <CardContent className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <Button 
                     variant="outline" 
-                    className="w-full flex-1"
+                    className="w-full h-20 sm:h-24 flex-col gap-1.5 sm:gap-2 rounded-xl hover:bg-muted/50 transition-all"
                     onClick={() => navigate("/reset-password")}
                   >
-                    Reset Password
+                    <div className="p-2.5 rounded-full bg-primary/10">
+                      <Lock className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-sm sm:text-base font-medium">Reset Password</span>
+                    <span className="text-xs text-muted-foreground">Set a new password</span>
                   </Button>
                   <Button 
                     variant="default" 
-                    className="w-full flex-1"
+                    className="w-full h-20 sm:h-24 flex-col gap-1.5 sm:gap-2 rounded-xl bg-primary hover:bg-primary/90 transition-all"
                     onClick={() => navigate("/forget-password")}
                   >
-                    Update Password
+                    <div className="p-2.5 rounded-full bg-background/20">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm sm:text-base font-medium">Two-Factor Auth</span>
+                    <span className="text-xs text-background/80">
+                      {profile?.twoFactorEnabled ? "Manage 2FA" : "Enable 2FA"}
+                    </span>
                   </Button>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-2 pt-4">
-                  <Badge variant={profile?.twoFactorEnabled ? "default" : "outline"}>
-                    {profile?.twoFactorEnabled ? (
-                      <span className="flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                        </svg>
-                        2FA Enabled
-                      </span>
-                    ) : "2FA Disabled"}
-                  </Badge>
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Last login: {new Date().toLocaleString()}
-                  </Badge>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                    <div>
+                      <Label className="text-sm font-medium">Last Login</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {profile?.lastLogin ? new Date(profile.lastLogin).toLocaleString() : "Never"}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs sm:text-sm rounded-lg">
+                      {profile?.ipAddress || "IP: Unknown"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                    <div>
+                      <Label className="text-sm font-medium">Active Sessions</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {profile?.activeSessions || "0"} devices
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
+                      View all
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </TabsContent>
 
-        {/* Other tabs content */}
+        {/* Other tabs with consistent styling */}
         {["social", "interests", "skills"].map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-6">
-            <Card className="border shadow-sm rounded-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold tracking-tight capitalize text-foreground">
-                  {tab}
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  {tab === "social" && "Connect your social media accounts"}
-                  {tab === "interests" && "Manage your interests and preferences"}
-                  {tab === "skills" && "Showcase your professional skills"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-12 gap-4">
-                  <div className="bg-muted p-4 rounded-full">
-                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border shadow-sm rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      {React.cloneElement(tabIcons[tab], { className: "w-5 h-5 text-primary" })}
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight capitalize">
+                        {tab}
+                      </CardTitle>
+                      <CardDescription className="text-sm sm:text-base">
+                        {tab === "social" && "Connect your social media accounts"}
+                        {tab === "interests" && "Manage your interests and preferences"}
+                        {tab === "skills" && "Showcase your professional skills"}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <p className="text-muted-foreground text-center">
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)} features coming soon
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center justify-center py-12 sm:py-16 gap-4 sm:gap-5">
+                    <div className="bg-muted/50 p-4 sm:p-5 rounded-full border">
+                      {React.cloneElement(tabIcons[tab], { className: "w-8 h-8 sm:w-10 sm:h-10" })}
+                    </div>
+                    <p className="text-muted-foreground text-center max-w-md mx-auto text-sm sm:text-base">
+                      {tab === "social" && "Connect your social accounts to share your profile and grow your network"}
+                      {tab === "interests" && "Add your interests to get personalized content recommendations"}
+                      {tab === "skills" && "Highlight your professional skills to showcase your expertise"}
+                    </p>
+                    <Button variant="outline" className="mt-2 sm:mt-4 rounded-lg">
+                      Coming Soon
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </TabsContent>
         ))}
       </Tabs>
