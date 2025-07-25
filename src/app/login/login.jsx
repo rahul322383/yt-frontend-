@@ -1,4 +1,3 @@
-
 /* eslint-disable no-unused-vars */
 "use client";
 
@@ -12,7 +11,9 @@ import { FaEye, FaEyeSlash, FaGithub, FaFacebook, FaArrowRight, FaSpinner } from
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
-import API from "../../utils/axiosInstance.jsx"; // Adjust path as needed
+import API from "../../utils/axiosInstance.jsx";
+import { useAuth } from "../../context/AuthContext";
+import Cookies from "js-cookie";
 
 // Validation schema for password login
 const schema = z.object({
@@ -20,7 +21,7 @@ const schema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
-const LoginPage = ({ setUser }) => {
+const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [error, setError] = useState("");
@@ -32,8 +33,10 @@ const LoginPage = ({ setUser }) => {
   const [otpValue, setOtpValue] = useState("");
   const [otpIdentifier, setOtpIdentifier] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const navigate = useNavigate();
+  const { auth, setAuth, clearAuthData } = useAuth();
 
   const {
     register,
@@ -47,8 +50,14 @@ const LoginPage = ({ setUser }) => {
 
   useEffect(() => {
     setIsMounted(true);
+    
+    // Check if user is already authenticated
+    if (auth.isAuthenticated) {
+      navigate("/dashboard");
+    }
+    
     return () => setIsMounted(false);
-  }, []);
+  }, [auth.isAuthenticated, navigate]);
 
   // Normal login submit
   const onSubmit = async (data) => {
@@ -64,17 +73,29 @@ const LoginPage = ({ setUser }) => {
     };
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/users/login`,
+      const res = await API.post(
+        `/users/login`,
         payload,
         { withCredentials: true }
       );
 
       const { accessToken, refreshToken, user } = res.data.data;
 
-      localStorage.setItem("accessToken", accessToken);
+      // Set tokens based on rememberMe choice
+      if (rememberMe) {
+        Cookies.set("accessToken", accessToken, { expires: 30 }); // Expires in 30 days
+      } else {
+        localStorage.setItem("accessToken", accessToken);
+      }
       localStorage.setItem("refreshToken", refreshToken);
-      setUser(user);
+
+      // Update auth state
+      setAuth({
+        user: user,
+        isAuthenticated: true,
+        loading: false
+      });
+
       setShowPopup(true);
 
       setTimeout(() => {
@@ -98,16 +119,29 @@ const LoginPage = ({ setUser }) => {
   // Google login success handler
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/users/auth/google`,
+      const res = await API.post(
+        `/users/auth/google`,
         { token: credentialResponse.credential },
         { withCredentials: true }
       );
 
       const { accessToken, refreshToken, user } = res.data.data;
-      localStorage.setItem("accessToken", accessToken);
+      
+      // Set tokens based on rememberMe choice
+      if (rememberMe) {
+        Cookies.set("accessToken", accessToken, { expires: 30 });
+      } else {
+        localStorage.setItem("accessToken", accessToken);
+      }
       localStorage.setItem("refreshToken", refreshToken);
-      setUser(user);
+
+      // Update auth state
+      setAuth({
+        user: user,
+        isAuthenticated: true,
+        loading: false
+      });
+
       setShowPopup(true);
 
       setTimeout(() => {
@@ -127,33 +161,32 @@ const LoginPage = ({ setUser }) => {
   };
 
   // === OTP Login flow ===
- const sendOtp = async () => {
-  if (!otpIdentifier.trim()) {
-    setOtpError("Please enter your email");
-    return;
-  }
-
-  setOtpError("");
-  setOtpLoading(true);
-
-  try {
-    await API.post(
-      `/users/sendemail/send-otp`,
-      { email: otpIdentifier }, // 🔥 key fix here
-      { withCredentials: true }
-    );
-    if (isMounted) setOtpSent(true);
-  } catch (err) {
-    if (isMounted) {
-      setOtpError(
-        err.response?.data?.message || "Failed to send OTP. Try again."
-      );
+  const sendOtp = async () => {
+    if (!otpIdentifier.trim()) {
+      setOtpError("Please enter your email");
+      return;
     }
-  } finally {
-    if (isMounted) setOtpLoading(false);
-  }
-};
 
+    setOtpError("");
+    setOtpLoading(true);
+
+    try {
+      await API.post(
+        `/users/sendemail/send-otp`,
+        { email: otpIdentifier },
+        { withCredentials: true }
+      );
+      if (isMounted) setOtpSent(true);
+    } catch (err) {
+      if (isMounted) {
+        setOtpError(
+          err.response?.data?.message || "Failed to send OTP. Try again."
+        );
+      }
+    } finally {
+      if (isMounted) setOtpLoading(false);
+    }
+  };
 
   const verifyOtp = async () => {
     if (!otpValue.trim()) {
@@ -171,9 +204,22 @@ const LoginPage = ({ setUser }) => {
       );
 
       const { accessToken, refreshToken, user } = res.data.data;
-      localStorage.setItem("accessToken", accessToken);
+      
+      // Set tokens based on rememberMe choice
+      if (rememberMe) {
+        Cookies.set("accessToken", accessToken, { expires: 30 });
+      } else {
+        localStorage.setItem("accessToken", accessToken);
+      }
       localStorage.setItem("refreshToken", refreshToken);
-      setUser(user);
+
+      // Update auth state
+      setAuth({
+        user: user,
+        isAuthenticated: true,
+        loading: false
+      });
+
       setShowPopup(true);
 
       setTimeout(() => {
@@ -192,15 +238,19 @@ const LoginPage = ({ setUser }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 p-4 sm:p-6 transition-colors duration-500">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 p-4 sm:p-6 transition-all duration-500">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
-        className="bg-white/5 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/10 dark:border-zinc-800/50 dark:bg-zinc-900/20 transition-all"
+        className="bg-white/5 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/10 dark:border-zinc-800/50 dark:bg-zinc-900/20 transition-all hover:shadow-lg hover:shadow-purple-500/10"
       >
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+          <motion.div 
+            className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -213,21 +263,23 @@ const LoginPage = ({ setUser }) => {
                 clipRule="evenodd"
               />
             </svg>
-          </div>
-          <h2 className="text-white text-3xl font-bold text-center">Welcome Back</h2>
+          </motion.div>
+          <h2 className="text-white text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">
+            Welcome Back
+          </h2>
           <p className="text-white/60 text-center mt-2">
             Sign in to access your account
           </p>
         </div>
 
         <div className="flex justify-center mb-6">
-          <div className="inline-flex rounded-lg bg-white/10 p-1">
+          <div className="inline-flex rounded-lg bg-white/10 p-1 backdrop-blur-sm">
             <button
               onClick={() => setLoginMode("password")}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 loginMode === "password"
                   ? "bg-white text-gray-900 shadow"
-                  : "text-white/80 hover:text-white"
+                  : "text-white/80 hover:text-white hover:bg-white/5"
               }`}
             >
               Password
@@ -237,7 +289,7 @@ const LoginPage = ({ setUser }) => {
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 loginMode === "otp"
                   ? "bg-white text-gray-900 shadow"
-                  : "text-white/80 hover:text-white"
+                  : "text-white/80 hover:text-white hover:bg-white/5"
               }`}
             >
               OTP Login
@@ -268,7 +320,7 @@ const LoginPage = ({ setUser }) => {
                     type="text"
                     placeholder="your@email.com"
                     {...register("identifier")}
-                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/30 outline-none placeholder-white/40 transition duration-200"
+                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 outline-none placeholder-white/40 transition-all duration-200"
                     aria-invalid={errors.identifier ? "true" : "false"}
                   />
                 </div>
@@ -288,13 +340,13 @@ const LoginPage = ({ setUser }) => {
                     type={passwordVisible ? "text" : "password"}
                     placeholder="••••••••"
                     {...register("password")}
-                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/30 outline-none placeholder-white/40 pr-10 transition"
+                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 outline-none placeholder-white/40 pr-10 transition-all duration-200"
                     aria-invalid={errors.password ? "true" : "false"}
                   />
                   <button
                     type="button"
                     onClick={() => setPasswordVisible((prev) => !prev)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-all duration-200"
                     aria-label={passwordVisible ? "Hide password" : "Show password"}
                   >
                     {passwordVisible ? <FaEyeSlash /> : <FaEye />}
@@ -313,28 +365,32 @@ const LoginPage = ({ setUser }) => {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 rounded border-white/30 bg-white/5 text-yellow-400 focus:ring-yellow-400"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-white/30 bg-white/5 text-yellow-400 focus:ring-2 focus:ring-yellow-400/30 cursor-pointer transition-all"
                   />
                   <label
                     htmlFor="remember-me"
-                    className="ml-2 block text-sm text-white/70"
+                    className="ml-2 block text-sm text-white/70 cursor-pointer select-none"
                   >
                     Remember me
                   </label>
                 </div>
                 <button
                   type="button"
-                  className="text-sm text-yellow-400 hover:text-yellow-300 transition"
+                  className="text-sm text-yellow-400 hover:text-yellow-300 transition-all duration-200"
                   onClick={() => navigate("/forget-password")}
                 >
                   Forgot password?
                 </button>
               </div>
 
-              <button
+              <motion.button
                 type="submit"
                 disabled={!isValid || loading}
-                className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-semibold rounded-xl shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-semibold rounded-xl shadow-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                whileHover={{ scale: !isValid || loading ? 1 : 1.02 }}
+                whileTap={{ scale: !isValid || loading ? 1 : 0.98 }}
               >
                 {loading ? (
                   <>
@@ -346,7 +402,7 @@ const LoginPage = ({ setUser }) => {
                     Login In <FaArrowRight className="ml-2" />
                   </>
                 )}
-              </button>
+              </motion.button>
             </form>
           </>
         )}
@@ -375,14 +431,16 @@ const LoginPage = ({ setUser }) => {
                     placeholder="your@email.com or +1234567890"
                     value={otpIdentifier}
                     onChange={(e) => setOtpIdentifier(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/30 outline-none placeholder-white/40 transition duration-200"
+                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 outline-none placeholder-white/40 transition-all duration-200"
                   />
                 </div>
-                <button
+                <motion.button
                   type="button"
                   onClick={sendOtp}
                   disabled={otpLoading}
-                  className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-semibold rounded-xl shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-semibold rounded-xl shadow-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  whileHover={{ scale: otpLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: otpLoading ? 1 : 0.98 }}
                 >
                   {otpLoading ? (
                     <>
@@ -392,11 +450,11 @@ const LoginPage = ({ setUser }) => {
                   ) : (
                     "Send OTP"
                   )}
-                </button>
+                </motion.button>
                 <div className="text-center">
                   <button
                     type="button"
-                    className="text-sm text-yellow-400 hover:text-yellow-300 transition"
+                    className="text-sm text-yellow-400 hover:text-yellow-300 transition-all duration-200"
                     onClick={() => setLoginMode("password")}
                   >
                     Back to Password Login
@@ -414,14 +472,16 @@ const LoginPage = ({ setUser }) => {
                     placeholder="6-digit code"
                     value={otpValue}
                     onChange={(e) => setOtpValue(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/30 outline-none placeholder-white/40 transition duration-200 text-center tracking-widest"
+                    className="w-full px-4 py-3 bg-white/5 text-white rounded-xl border border-white/10 hover:border-white/20 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 outline-none placeholder-white/40 transition-all duration-200 text-center tracking-widest"
                   />
                 </div>
-                <button
+                <motion.button
                   type="button"
                   onClick={verifyOtp}
                   disabled={otpLoading}
-                  className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-semibold rounded-xl shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 font-semibold rounded-xl shadow-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  whileHover={{ scale: otpLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: otpLoading ? 1 : 0.98 }}
                 >
                   {otpLoading ? (
                     <>
@@ -431,11 +491,11 @@ const LoginPage = ({ setUser }) => {
                   ) : (
                     "Verify OTP"
                   )}
-                </button>
+                </motion.button>
                 <div className="text-center">
                   <button
                     type="button"
-                    className="text-sm text-yellow-400 hover:text-yellow-300 transition"
+                    className="text-sm text-yellow-400 hover:text-yellow-300 transition-all duration-200"
                     onClick={() => {
                       setOtpSent(false);
                       setOtpValue("");
@@ -460,21 +520,25 @@ const LoginPage = ({ setUser }) => {
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <button
+          <motion.button
             onClick={() => handleOAuthLogin("facebook")}
             className="flex items-center justify-center p-3 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-600/20 transition-colors"
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Login with Facebook"
           >
             <FaFacebook className="text-blue-400" size={18} />
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={() => handleOAuthLogin("github")}
             className="flex items-center justify-center p-3 rounded-xl bg-gray-800/10 hover:bg-gray-800/20 border border-gray-800/20 transition-colors"
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Login with GitHub"
           >
             <FaGithub className="text-white" size={18} />
-          </button>
+          </motion.button>
 
           <div className="flex items-center justify-center">
             <GoogleLogin
@@ -491,12 +555,14 @@ const LoginPage = ({ setUser }) => {
 
         <div className="mt-6 text-center text-sm text-white/60">
           Don't have an account?{" "}
-          <button
+          <motion.button
             onClick={() => navigate("/signup")}
-            className="font-medium text-yellow-400 hover:text-yellow-300 transition"
+            className="font-medium text-yellow-400 hover:text-yellow-300 transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             Sign up
-          </button>
+          </motion.button>
         </div>
 
         <AnimatePresence>

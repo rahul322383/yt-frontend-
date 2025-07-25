@@ -1,15 +1,13 @@
 /* eslint-disable no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { XCircle, Clock } from "lucide-react";
-import  VideoUpload from "../components/VideoCard/UploadCard.jsx"
+import VideoUpload from "../components/VideoCard/UploadCard.jsx";
 import toast from "react-hot-toast";
 import axios from "axios";
 import api from "../../utils/axiosInstance.jsx";
 import PlaylistVideoManager from "./PlaylistVideoManager.jsx";
-
 
 const VideoPlayerModal = ({ videoUrl, isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -43,10 +41,31 @@ const PlaylistDetailsPage = () => {
   const [videoUrl, setVideoUrl] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Check authentication status
+  const checkAuth = useCallback(() => {
+    const token = localStorage.getItem('accessToken');
+
+    if (!token) {
+      navigate('/login');
+      toast.error('Please login to access this page');
+    }
+  }, [navigate]);
+
   const fetchPlaylist = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/users/playlist/${id}`);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        checkAuth();
+        return;
+      }
+
+      const res = await api.get(`/users/playlist/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setPlaylist(res.data.data);
       setFormData({
         name: res.data.data.name || "",
@@ -54,37 +73,76 @@ const PlaylistDetailsPage = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error("Could not load playlist.");
-      navigate("/playlists");
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        checkAuth();
+      } else {
+        toast.error("Could not load playlist.");
+        navigate("/playlists");
+      }
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, checkAuth]);
 
   useEffect(() => {
+    checkAuth(); // Check auth on initial load
     if (!id) {
       toast.error("Invalid playlist ID");
       navigate("/playlists");
       return;
     }
     fetchPlaylist();
-  }, [id, fetchPlaylist]);
+  }, [id, fetchPlaylist, checkAuth, navigate]);
+
+  // Add token to all API requests
+  const apiWithAuth = {
+    get: async (url) => {
+      const token = localStorage.getItem('token');
+      return api.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    },
+    post: async (url, data) => {
+      const token = localStorage.getItem('token');
+      return api.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    },
+    put: async (url, data) => {
+      const token = localStorage.getItem('token');
+      return api.put(url, data, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+  };
 
   const handleUpdatePlaylist = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/users/playlist/${id}`, formData);
+      await apiWithAuth.put(`/users/playlist/${id}`, formData);
       toast.success("Playlist updated!");
       setIsEditMode(false);
       fetchPlaylist();
     } catch (error) {
-      toast.error("Failed to update playlist.");
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        checkAuth();
+      } else {
+        toast.error("Failed to update playlist.");
+      }
     }
   };
 
   const handlePlayVideo = async (videoId) => {
     try {
-      const res = await api.get(`/user/playlist/videos/${videoId}/watch`);
+      const res = await apiWithAuth.get(`/user/playlist/videos/${videoId}`);
       const url = res.data?.data?.url;
       if (url) {
         setVideoUrl(url);
@@ -92,8 +150,13 @@ const PlaylistDetailsPage = () => {
       } else {
         toast.error("Video URL not found");
       }
-    } catch {
-      toast.error("Failed to load video");
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        checkAuth();
+      } else {
+        toast.error("Failed to load video");
+      }
     }
   };
 
@@ -120,6 +183,12 @@ const PlaylistDetailsPage = () => {
     const { title, videoRef, videoFile } = uploadData;
     if (!title || !videoFile) return toast.error("Please fill all fields");
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      checkAuth();
+      return;
+    }
+
     const form = new FormData();
     form.append("title", title);
     form.append("video", videoFile);
@@ -132,7 +201,10 @@ const PlaylistDetailsPage = () => {
 
     try {
       const response = await api.post(`/users/playlist/${id}/videos`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { 
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`
+        },
         cancelToken: source.token,
         onUploadProgress: (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
@@ -144,8 +216,14 @@ const PlaylistDetailsPage = () => {
       fetchPlaylist();
       setUploadData({ title: "", videoFile: null, videoRef: "" });
     } catch (err) {
-      if (axios.isCancel(err)) toast.info("Video upload was canceled.");
-      else toast.error(err?.response?.data?.message || "Upload failed");
+      if (axios.isCancel(err)) {
+        toast.info("Video upload was canceled.");
+      } else if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        checkAuth();
+      } else {
+        toast.error(err?.response?.data?.message || "Upload failed");
+      }
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -264,21 +342,21 @@ const PlaylistDetailsPage = () => {
           >
             Upload Video
           </button>
-          
         )}
       </form>
-     <div>
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
-      >
-        Upload Video
-      </button>
 
-      {isModalOpen && (
-        <VideoUpload onClose={() => setIsModalOpen(false)} />
-      )}
-    </div>
+      <div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
+        >
+          Upload Video
+        </button>
+
+        {isModalOpen && (
+          <VideoUpload onClose={() => setIsModalOpen(false)} />
+        )}
+      </div>
 
       <PlaylistVideoManager playlist={playlist} onPlay={handlePlayVideo} />
     </div>

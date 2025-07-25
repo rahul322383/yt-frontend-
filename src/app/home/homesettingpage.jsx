@@ -7,7 +7,6 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../../utils/axiosInstance.jsx";
 import { 
-
   UserIcon,
   EyeIcon,
   EyeOffIcon,
@@ -15,33 +14,18 @@ import {
   PaletteIcon,
   AlertTriangleIcon,
   BellIcon,
-  UserIcon as UserIcon2,
-  EyeIcon as EyeIcon2,
-  EyeOffIcon as EyeOffIcon2,
-  ClockIcon as ClockIcon2,
-  PaletteIcon as PaletteIcon2,
-  BellIcon as BellIcon2,
-  YoutubeIcon,
+  CheckCircleIcon,
   ShieldIcon,
   SaveIcon,
   MailIcon,
   LogOutIcon,
   DownloadIcon,
   Loader2Icon,
-  ShareIcon as ShareIcon2,
-  ShareIcon as ShareIcon3,
-  ShareIcon as ShareIcon4,
-  ShareIcon as ShareIcon5,
-  ShareIcon as ShareIcon6,
   Trash2Icon,
-
-
-  Settings as Save,
-
+  YoutubeIcon,
+  LockIcon,
 } from 'lucide-react';
 import { Switch } from '@headlessui/react';
-
-
 
 const SettingItem = ({ label, children, description, id, icon }) => (
   <div className="mb-6 p-5 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/70 dark:border-gray-700/70 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.005]">
@@ -171,11 +155,9 @@ const SettingsPageHome = () => {
 
       } catch (error) {
         console.error("Authentication error:", error);
-        toast.error("Authentication error");
         localStorage.removeItem('accessToken');
         setAccessToken(null);
-        navigate("/login");
-        toast.error("Please login to continue");
+        setUiState(prev => ({ ...prev, loading: false }));
       }
     };
 
@@ -243,27 +225,25 @@ const SettingsPageHome = () => {
     }
   };
 
-const handleInputChange = (e) => {
-  // Handle both event objects and direct boolean values (from Switch components)
-  const name = e.target?.name || e.name;
-  const value = e.target?.value ?? e.target?.checked ?? e;
-  
-  setFormData(prev => ({
-    ...prev,
-    [name]: value
-  }));
-
-  // Calculate password strength when password changes
-  if (name === 'password') {
-    setUiState(prev => ({
+  const handleInputChange = (e) => {
+    // Handle both event objects and direct boolean values (from Switch components)
+    const name = e.target?.name || e.name;
+    const value = e.target?.value ?? e.target?.checked ?? e;
+    
+    setFormData(prev => ({
       ...prev,
-      passwordStrength: calculatePasswordStrength(value),
-      showPasswordStrength: value.length > 0
+      [name]: value
     }));
-  }
-};
 
-
+    // Calculate password strength when password changes
+    if (name === 'password') {
+      setUiState(prev => ({
+        ...prev,
+        passwordStrength: calculatePasswordStrength(value),
+        showPasswordStrength: value.length > 0
+      }));
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setUiState(prev => ({ ...prev, showPassword: !prev.showPassword }));
@@ -299,6 +279,7 @@ const handleInputChange = (e) => {
       setUiState(prev => ({ ...prev, showTwoFactorSetup: false }));
       toast.success("Two-factor authentication enabled successfully!");
     } catch (error) {
+      console.error("Failed to verify 2FA code:", error);
       toast.error("Invalid verification code");
     }
   };
@@ -309,6 +290,7 @@ const handleInputChange = (e) => {
       setFormData(prev => ({ ...prev, twoFactorEnabled: false }));
       toast.success("Two-factor authentication disabled");
     } catch (error) {
+      console.error("Failed to disable 2FA:", error);
       toast.error("Failed to disable two-factor authentication");
     }
   };
@@ -422,27 +404,10 @@ const handleInputChange = (e) => {
       URL.revokeObjectURL(url);
       toast.success("Data exported successfully");
     } catch (error) {
+      console.error("Export error:", error);
       toast.error("Failed to export user data");
     }
   };
-
-  if (uiState.loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
-          <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-4 p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl">
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse"></div>
-                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const PasswordStrengthIndicator = ({ strength }) => {
     const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong", "Very Strong"];
@@ -472,7 +437,57 @@ const handleInputChange = (e) => {
     );
   };
 
-return (
+  if (!accessToken) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
+            <LockIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Authentication Required
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Please login or sign up to access your settings
+          </p>
+          <div className="flex flex-col space-y-3">
+            <button
+              onClick={() => navigate("/login")}
+              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => navigate("/signup")}
+              className="w-full py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Create Account
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (uiState.loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
+          <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="space-y-4 p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse"></div>
+                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
       {/* Header */}
       <header className="mb-8">
@@ -571,30 +586,7 @@ return (
                     </button>
                   </div>
                   {uiState.showPasswordStrength && (
-                    <div className="mt-2">
-                      <div className="flex gap-1 mb-1">
-                        {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-1 flex-1 rounded-full ${i < uiState.passwordStrength
-                              ? uiState.passwordStrength < 3
-                                ? "bg-red-500"
-                                : uiState.passwordStrength < 5
-                                  ? "bg-yellow-500"
-                                  : "bg-green-500"
-                              : "bg-gray-200 dark:bg-gray-600"
-                              }`}
-                          ></div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {uiState.passwordStrength < 3
-                          ? "Weak password"
-                          : uiState.passwordStrength < 5
-                            ? "Moderate password"
-                            : "Strong password"}
-                      </p>
-                    </div>
+                    <PasswordStrengthIndicator strength={uiState.passwordStrength} />
                   )}
                 </div>
               </div>

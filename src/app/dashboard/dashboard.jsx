@@ -108,7 +108,7 @@ const Dashboard = () => {
       localStorage.removeItem("token");
       localStorage.removeItem("accessToken");
       document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      window.location.href = "/login";
+      window.location.href = "/";
     } catch (err) {
       console.error("Logout Error:", err);
       toast.error("Logout failed!");

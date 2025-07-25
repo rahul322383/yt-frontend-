@@ -1,9 +1,233 @@
+// /* eslint-disable */
+// "use client";
+// import React, { useEffect, useState, useRef } from "react";
+// import { Link } from "react-router-dom";
+// import { ToastContainer, toast } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
+// import API from "../../../utils/axiosInstance.jsx";
+
+// const WatchLaterPage = () => {
+//   const [videos, setVideos] = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   const fetchWatchLater = async () => {
+//     try {
+//       const res = await API.get("/users/watch-later");
+//       setVideos(res?.data?.data?.videos || []);
+//     } catch (err) {
+//       toast.error("Failed to load Watch Later list.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const removeFromWatchLater = async (videoId) => {
+//     try {
+//       await API.delete(`/users/watch-later/${videoId}`);
+//       toast.success("Removed from Watch Later");
+//       setVideos((prev) => prev.filter((v) => v._id !== videoId));
+//     } catch (err) {
+//       toast.error("Error removing video");
+//     }
+//   };
+
+//   const handleLikeDislike = async (action, videoId) => {
+//     const storageKey = `video_action_${videoId}`;
+//     const prev = localStorage.getItem(storageKey);
+//     const newAction = prev === action ? null : action;
+
+//     try {
+//       await API.post(`/user/videos/${videoId}/toggle-like`, {
+//         action: newAction,
+//         previousAction: prev,
+//       });
+
+//       if (newAction) localStorage.setItem(storageKey, newAction);
+//       else localStorage.removeItem(storageKey);
+
+//       toast.success(`You ${newAction || "removed vote"} successfully`);
+//       fetchWatchLater();
+//     } catch (err) {
+//       toast.error("Something went wrong while voting.");
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchWatchLater();
+//   }, []);
+
+//   const VideoCard = ({ video, onRemove }) => {
+//     const videoRef = useRef(null);
+//     const isShort = video?.isShort;
+//     const currentAction = localStorage.getItem(`video_action_${video._id}`);
+
+//     const handleMouseEnter = () => {
+//       if (videoRef.current) {
+//         videoRef.current.muted = true;
+//         videoRef.current.play();
+//       }
+//     };
+
+//     const handleMouseLeave = () => {
+//       if (videoRef.current) {
+//         videoRef.current.pause();
+//         videoRef.current.currentTime = 0;
+//       }
+//     };
+
+//     return (
+//       <div
+//         className={`${
+//           isShort
+//             ? "w-full sm:w-[280px] flex-shrink-0"
+//             : "bg-white dark:bg-gray-900 rounded-xl shadow hover:shadow-lg transition-all"
+//         } flex flex-col`}
+//       >
+//         <Link
+//           to={`/video/${video._id}`}
+//           onMouseEnter={handleMouseEnter}
+//           onMouseLeave={handleMouseLeave}
+//           className={`relative overflow-hidden ${isShort ? "" : "rounded-t-xl"}`}
+//         >
+//           <video
+//             ref={videoRef}
+//             src={video.videoUrl}
+//             className={`w-full h-full ${
+//               isShort ? "aspect-[9/16]" : "aspect-video"
+//             } object-cover`}
+//             preload="metadata"
+//             playsInline
+//             controls={false}
+//           />
+//         </Link>
+
+//         <div className={`p-3 ${isShort ? "bg-black text-white" : ""}`}>
+//           <h3 className="text-base font-semibold line-clamp-2">{video.title}</h3>
+
+//           {/* Owner Info */}
+//           <div className="flex items-center gap-2 mt-1 text-sm">
+//             {video.owner?.avatar && (
+//               <img
+//                 src={video.owner.avatar}
+//                 alt="avatar"
+//                 className="w-6 h-6 rounded-full object-cover"
+//               />
+//             )}
+//             <span className="text-gray-500 dark:text-gray-400">
+//               {video.owner?.username || "Unknown"}
+//             </span>
+//           </div>
+
+//           {/* Description */}
+//           {!isShort && (
+//             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
+//               {video.description || "No description available."}
+//             </p>
+//           )}
+
+//           {/* Stats */}
+//           <div className="flex flex-wrap justify-between text-xs text-gray-500 mt-2">
+//             <span>📅 {new Date(video.createdAt).toLocaleDateString()}</span>
+//             <span>👁️ {video.views ?? 0} views</span>
+//             <span>🕒 {video.duration || "N/A"} min</span>
+//             {/* <span>💬 {video.commentsCount ?? 0}</span> */}
+//           </div>
+
+//           {/* Like / Dislike */}
+//           <div className="flex items-center gap-3 mt-3">
+//             <button
+//               onClick={(e) => {
+//                 e.stopPropagation();
+//                 handleLikeDislike("like", video._id);
+//               }}
+//               className={`text-xs px-3 py-1 rounded ${
+//                 currentAction === "like"
+//                   ? "bg-green-200 text-green-800"
+//                   : "bg-gray-100 text-gray-700"
+//               }`}
+//             >
+//               👍 {video.likesCount ?? 0}
+//             </button>
+
+//             <button
+//               onClick={(e) => {
+//                 e.stopPropagation();
+//                 handleLikeDislike("dislike", video._id);
+//               }}
+//               className={`text-xs px-3 py-1 rounded ${
+//                 currentAction === "dislike"
+//                   ? "bg-red-200 text-red-800"
+//                   : "bg-gray-100 text-gray-700"
+//               }`}
+//             >
+//               👎 {video.dislikesCount ?? 0}
+//             </button>
+//           </div>
+
+//           {/* Actions */}
+//           <div className="mt-4 flex justify-between gap-2">
+//             <button
+//               onClick={() => onRemove(video._id)}
+//               className="text-xs px-3 py-1 bg-red-100 text-red-600 border border-red-300 rounded hover:bg-red-200 transition w-full"
+//             >
+//               Remove
+//             </button>
+
+//             <button
+//               onClick={() =>
+//                 navigator.clipboard.writeText(
+//                   `${window.location.origin}/video/${video._id}`
+//                 ) && toast.success("Link copied!")
+//               }
+//               className="text-xs px-3 py-1 bg-blue-100 text-blue-700 border border-blue-300 rounded hover:bg-blue-200 transition w-full"
+//             >
+//               Share
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   };
+
+//   if (loading)
+//     return <div className="p-4 text-center text-lg text-gray-500">Loading Watch Later...</div>;
+
+//   if (!videos.length)
+//     return <div className="p-4 text-center text-gray-500">No videos saved yet 😪</div>;
+
+//   return (
+//     <div className="p-4 max-w-7xl mx-auto">
+//       <h2 className="text-2xl font-semibold mb-6">📺 Watch Later</h2>
+
+//       {/* Shorts - Horizontal scroll */}
+//       <div className="flex gap-4 overflow-x-auto mb-6 scrollbar-thin scrollbar-thumb-gray-400">
+//         {videos.filter((v) => v.isShort).map((video) => (
+//           <VideoCard key={video._id} video={video} onRemove={removeFromWatchLater} />
+//         ))}
+//       </div>
+
+//       {/* Regular Videos - Grid */}
+//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+//         {videos.filter((v) => !v.isShort).map((video) => (
+//           <VideoCard key={video._id} video={video} onRemove={removeFromWatchLater} />
+//         ))}
+//       </div>
+
+//       <ToastContainer position="bottom-right" autoClose={1000} />
+//     </div>
+//   );
+// };
+
+// export default WatchLaterPage;
+
+
 /* eslint-disable */
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaClock, FaTrash, FaShare, FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 import API from "../../../utils/axiosInstance.jsx";
 
 const WatchLaterPage = () => {
@@ -64,7 +288,7 @@ const WatchLaterPage = () => {
     const handleMouseEnter = () => {
       if (videoRef.current) {
         videoRef.current.muted = true;
-        videoRef.current.play();
+        videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
       }
     };
 
@@ -75,145 +299,170 @@ const WatchLaterPage = () => {
       }
     };
 
+    const formatDuration = (duration) => {
+      if (!duration) return "N/A";
+      const mins = Math.floor(duration / 60);
+      const secs = Math.floor(duration % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
     return (
       <div
-        className={`${
+        className={`relative group ${
           isShort
-            ? "w-full sm:w-[280px] flex-shrink-0"
-            : "bg-white dark:bg-gray-900 rounded-xl shadow hover:shadow-lg transition-all"
-        } flex flex-col`}
+            ? "w-[280px] flex-shrink-0"
+            : "bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all overflow-hidden"
+        }`}
       >
         <Link
           to={`/video/${video._id}`}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className={`relative overflow-hidden ${isShort ? "" : "rounded-t-xl"}`}
+          className={`block relative ${isShort ? "" : "pb-[56.25%]"}`}
         >
           <video
             ref={videoRef}
             src={video.videoUrl}
-            className={`w-full h-full ${
+            className={`absolute top-0 left-0 w-full h-full object-cover ${
               isShort ? "aspect-[9/16]" : "aspect-video"
-            } object-cover`}
+            }`}
             preload="metadata"
             playsInline
-            controls={false}
+            muted
+            loop
           />
+          <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded">
+            {formatDuration(video.duration)}
+          </div>
         </Link>
 
         <div className={`p-3 ${isShort ? "bg-black text-white" : ""}`}>
-          <h3 className="text-base font-semibold line-clamp-2">{video.title}</h3>
-
-          {/* Owner Info */}
-          <div className="flex items-center gap-2 mt-1 text-sm">
-            {video.owner?.avatar && (
+          <div className="flex gap-3">
+            {!isShort && video.owner?.avatar && (
               <img
                 src={video.owner.avatar}
                 alt="avatar"
-                className="w-6 h-6 rounded-full object-cover"
+                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
               />
             )}
-            <span className="text-gray-500 dark:text-gray-400">
-              {video.owner?.username || "Unknown"}
-            </span>
+            
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold line-clamp-2">{video.title}</h3>
+              
+              {!isShort && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {video.owner?.username || "Unknown"}
+                </p>
+              )}
+            </div>
           </div>
-
-          {/* Description */}
-          {!isShort && (
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
-              {video.description || "No description available."}
-            </p>
-          )}
 
           {/* Stats */}
-          <div className="flex flex-wrap justify-between text-xs text-gray-500 mt-2">
-            <span>📅 {new Date(video.createdAt).toLocaleDateString()}</span>
-            <span>👁️ {video.views ?? 0} views</span>
-            <span>🕒 {video.duration || "N/A"} min</span>
-            {/* <span>💬 {video.commentsCount ?? 0}</span> */}
-          </div>
-
-          {/* Like / Dislike */}
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLikeDislike("like", video._id);
-              }}
-              className={`text-xs px-3 py-1 rounded ${
-                currentAction === "like"
-                  ? "bg-green-200 text-green-800"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              👍 {video.likesCount ?? 0}
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLikeDislike("dislike", video._id);
-              }}
-              className={`text-xs px-3 py-1 rounded ${
-                currentAction === "dislike"
-                  ? "bg-red-200 text-red-800"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              👎 {video.dislikesCount ?? 0}
-            </button>
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+            <span>{video.views?.toLocaleString() || 0} views</span>
           </div>
 
           {/* Actions */}
-          <div className="mt-4 flex justify-between gap-2">
-            <button
-              onClick={() => onRemove(video._id)}
-              className="text-xs px-3 py-1 bg-red-100 text-red-600 border border-red-300 rounded hover:bg-red-200 transition w-full"
-            >
-              Remove
-            </button>
+          <div className="mt-3 flex items-center justify-between gap-2">
+           
 
-            <button
-              onClick={() =>
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/video/${video._id}`
-                ) && toast.success("Link copied!")
-              }
-              className="text-xs px-3 py-1 bg-blue-100 text-blue-700 border border-blue-300 rounded hover:bg-blue-200 transition w-full"
-            >
-              Share
-            </button>
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(video._id);
+                }}
+                className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
+                title="Remove"
+              >
+                <FaTrash size={14} />
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/video/${video._id}`
+                  );
+                  toast.success("Link copied!");
+                }}
+                className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
+                title="Share"
+              >
+                <FaShare size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   };
 
-  if (loading)
-    return <div className="p-4 text-center text-lg text-gray-500">Loading Watch Later...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
-  if (!videos.length)
-    return <div className="p-4 text-center text-gray-500">No videos saved yet 😪</div>;
+  if (!videos.length) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
+        <FaClock className="text-5xl text-gray-400 mb-4" />
+        <h2 className="text-xl font-medium text-gray-600 dark:text-gray-300 mb-2">
+          Your Watch Later is empty
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 max-w-md">
+          Save videos to watch later by clicking the clock icon when hovering over videos
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">📺 Watch Later</h2>
-
-      {/* Shorts - Horizontal scroll */}
-      <div className="flex gap-4 overflow-x-auto mb-6 scrollbar-thin scrollbar-thumb-gray-400">
-        {videos.filter((v) => v.isShort).map((video) => (
-          <VideoCard key={video._id} video={video} onRemove={removeFromWatchLater} />
-        ))}
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex items-center gap-3 mb-6">
+        <FaClock className="text-2xl text-blue-500" />
+        <h1 className="text-2xl font-bold">Watch Later</h1>
       </div>
 
-      {/* Regular Videos - Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {videos.filter((v) => !v.isShort).map((video) => (
-          <VideoCard key={video._id} video={video} onRemove={removeFromWatchLater} />
-        ))}
-      </div>
+      {/* Shorts Section */}
+      {videos.filter(v => v.isShort).length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Shorts</h2>
+          <div className="relative">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              {videos.filter(v => v.isShort).map((video) => (
+                <VideoCard key={video._id} video={video} onRemove={removeFromWatchLater} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-      <ToastContainer position="bottom-right" autoClose={1000} />
+      {/* Regular Videos Section */}
+      {videos.filter(v => !v.isShort).length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Videos</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {videos.filter(v => !v.isShort).map((video) => (
+              <VideoCard key={video._id} video={video} onRemove={removeFromWatchLater} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <ToastContainer 
+        position="bottom-right" 
+        autoClose={2000}
+        theme="colored"
+        toastStyle={{
+          backgroundColor: '#1f2937',
+          color: '#f3f4f6'
+        }}
+      />
     </div>
   );
 };

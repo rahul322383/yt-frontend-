@@ -581,7 +581,8 @@ export default function CommentSection({ videoId }) {
       reset();
       toast.success("Comment posted!");
     } catch {
-      toast.error("Failed to post comment");
+      console.error("Failed to post comment");
+      toast.error("login to comment");
     }
   };
 

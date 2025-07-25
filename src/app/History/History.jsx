@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 "use client";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +29,9 @@ const HistoryPage = () => {
       const res = await API.get("/users/watch-history", {
         headers: { Authorization: `Bearer ${token}` },
       });
+    
       setHistory(res.data?.data || []);
+    
     } catch (err) {
       toast.error("Failed to fetch watch history");
     } finally {
@@ -66,6 +69,12 @@ const HistoryPage = () => {
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
+  const formatDuration = (sec) => {
+  const mins = Math.floor(sec / 60);
+  const secs = Math.floor(sec % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+};
+
 
   useEffect(() => {
     fetchWatchHistory();
@@ -129,7 +138,7 @@ const HistoryPage = () => {
              <div className="relative pb-[60.25%] overflow-hidden hover:placeholder-yellow-500">
                 <video
                   src={video?.videoUrl}
-                  className="absolute top-0 left-0 w-full h-full  "
+                  className="absolute top-0 left-0 w-full h-full cursor-pointer"
                   controls
                   muted
                   poster={video?.thumbnailUrl}  
@@ -143,7 +152,7 @@ const HistoryPage = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0">
                       <h3
-                        className="font-medium text-gray-800 dark:text-white line-clamp-2 cursor-pointer"
+                        className="font-medium  text-gray-800 dark:text-white line-clamp-2 cursor-pointer"
                         onClick={() => navigate(`/video/${video._id}`)}
                       >
                         {video.title}

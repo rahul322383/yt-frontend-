@@ -29,18 +29,20 @@ const SubscriptionButton = ({
     setIsLoading(true);
     try {
       const res = await API.post(`/users/subscribe/${channelId}`);
-
       const { success } = res.data;
 
       if (success) {
         const newState = !isSubscribed;
         setIsSubscribed(newState);
-        setDisplayCount((prev) => (newState ? prev + 1 : Math.max(0, prev - 1)));
+        setDisplayCount((prev) =>
+          newState ? prev + 1 : Math.max(0, prev - 1)
+        );
         setToast(newState ? "✅ Subscribed" : "❌ Unsubscribed");
 
+        // Turn off bell when unsubscribed
         if (!newState) setIsNotified(false);
       } else {
-        setToast("⚠️ Action failed");
+        setToast("⚠️ Subscription failed");
       }
     } catch (err) {
       console.error("Subscription error:", err);
@@ -59,14 +61,12 @@ const SubscriptionButton = ({
     setToast(newNotify ? "🔔 Notifications ON" : "🔕 Notifications OFF");
 
     try {
-      await API.post(`/users/notify-toggle/${channelId}`, {
-        notify: newNotify,
-      });
+      await API.post(`/users/subscribe/notify-toggle/${channelId}`); 
     } catch (err) {
       console.warn("Bell toggle failed:", err);
-      setIsNotified(!newNotify); // Revert on error
+      setIsNotified(!newNotify); // Revert state on fail
+      setToast("⚠️ Could not update notifications");
     }
-
     setTimeout(() => setToast(""), 2500);
   };
 
