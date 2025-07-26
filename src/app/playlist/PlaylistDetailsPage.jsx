@@ -54,13 +54,11 @@ const PlaylistDetailsPage = () => {
   const fetchPlaylist = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         checkAuth();
         return;
       }
-
       const res = await api.get(`/users/playlist/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -74,7 +72,7 @@ const PlaylistDetailsPage = () => {
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {
-        localStorage.removeItem('token');
+        localStorage.removeItem('accesstoken');
         checkAuth();
       } else {
         toast.error("Could not load playlist.");
@@ -87,6 +85,7 @@ const PlaylistDetailsPage = () => {
 
   useEffect(() => {
     checkAuth(); // Check auth on initial load
+    fetchPlaylist();
     if (!id) {
       toast.error("Invalid playlist ID");
       navigate("/playlists");
@@ -98,7 +97,8 @@ const PlaylistDetailsPage = () => {
   // Add token to all API requests
   const apiWithAuth = {
     get: async (url) => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
+;
       return api.get(url, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -106,7 +106,8 @@ const PlaylistDetailsPage = () => {
       });
     },
     post: async (url, data) => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
+;
       return api.post(url, data, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -114,7 +115,8 @@ const PlaylistDetailsPage = () => {
       });
     },
     put: async (url, data) => {
-      const token = localStorage.getItem('token');
+     const token = localStorage.getItem('accessToken');
+;
       return api.put(url, data, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -132,7 +134,7 @@ const PlaylistDetailsPage = () => {
       fetchPlaylist();
     } catch (error) {
       if (error.response?.status === 401) {
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         checkAuth();
       } else {
         toast.error("Failed to update playlist.");
@@ -152,7 +154,7 @@ const PlaylistDetailsPage = () => {
       }
     } catch (err) {
       if (err.response?.status === 401) {
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         checkAuth();
       } else {
         toast.error("Failed to load video");
@@ -183,7 +185,8 @@ const PlaylistDetailsPage = () => {
     const { title, videoRef, videoFile } = uploadData;
     if (!title || !videoFile) return toast.error("Please fill all fields");
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
+
     if (!token) {
       checkAuth();
       return;

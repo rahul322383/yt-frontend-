@@ -412,6 +412,7 @@
 // export default VideoDetailPage;
 
 
+
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -455,41 +456,51 @@ const VideoDetailPage = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [isSidebarSticky, setIsSidebarSticky] = useState(true);
 
+  const token = localStorage.getItem("accessToken");
+  const isAuth = !!token;
+  const isGuest = !user;
+
+  useEffect(() => {
+    fetchData();
+  }, [videoId]);
+
   // Save preferences to localStorage
   useEffect(() => {
     localStorage.setItem("autoplay", JSON.stringify(autoplay));
     localStorage.setItem("shuffle", JSON.stringify(shuffle));
   }, [autoplay, shuffle]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [videoRes, userRes] = await Promise.all([
-        API.get(`/user/playlist/videos/${videoId}`),
-        
-        
-      ]);
+const fetchData = async () => {
+  try {
+    setLoading(true);
 
-      if (videoRes?.data?.success) {
-        setVideo(videoRes.data.data.video);
-        setPlaylistVideos(videoRes.data.data.playlistVideos);
-        console.log(videoRes.data.data.playlistVideos);
-        setWatchLater(userRes.data?.user?.watchLater?.includes(videoId) || false );
-      } else {
-        toast.error("Video not found");
-      }
-      
-      if (userRes.data?.user) {
-        setUser(userRes.data.user);
-        console.log(userRes.data.user);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-      toast.error(err.response?.data?.message || "Failed to load data");
-    } finally {
-      setLoading(false);
+    const token = localStorage.getItem("accessToken");
+
+    // Always fetch the video
+    const videoRes = await API.get(`/user/playlist/videos/${videoId}`);
+
+    if (videoRes?.data?.success) {
+      setVideo(videoRes.data.data.video);
+      setPlaylistVideos(videoRes.data.data.playlistVideos);
+    } else {
+      toast.error("Video not found");
     }
-  };
+
+    // Only fetch user if token exists
+    if (token) {
+      const userRes = await API.get("/users/me");
+      setUser(userRes.data.user);
+      setWatchLater(userRes.data?.user?.watchLater?.includes(videoId) || false);
+    }
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+    toast.error(err.response?.data?.message || "Failed to load data");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleEnded = () => {
     if (!autoplay || !playlistVideos.length) return;

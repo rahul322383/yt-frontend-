@@ -279,7 +279,7 @@ const HomePage = ({ initialView = "trending" }) => {
           </button>
         </form>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-8">
           <button
             onClick={toggleDarkMode}
             className="text-xl text-gray-700 dark:text-white p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -301,7 +301,7 @@ const HomePage = ({ initialView = "trending" }) => {
                 </Link>
               </div>
 
-              <div className="relative">
+              <div className="relative ">
                 <img
                   src={auth.user?.avatar || "/default-avatar.png"}
                   alt="User Avatar"

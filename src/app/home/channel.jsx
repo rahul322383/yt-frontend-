@@ -10,6 +10,7 @@ import { Bell, BellOff, Sun, Moon, Shuffle, Clock, BarChart2, List, User, Grid }
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import LoadingSpinner from "../components/common/loadingSpinner.jsx";
+import SubscriptionButton from "../components/VideoCard/SubscriptionButton.jsx";
 import ShareCard from "../components/VideoCard/ShareCard.jsx";
 import "../../index.css";
 
@@ -73,30 +74,30 @@ const ChannelPage = () => {
     }
   };
 
-  const handleSubscribe = async () => {
-    if (!channelId || isLoading) return;
+  // const handleSubscribe = async () => {
+  //   if (!channelId || isLoading) return;
 
-    setIsLoading(true);
-    try {
-      const res = await API.post(`/users/subscribe/${channelId}`);
-      const { success } = res.data;
+  //   setIsLoading(true);
+  //   try {
+  //     const res = await API.post(`/users/subscribe/${channelId}`);
+  //     const { success } = res.data;
 
-      if (success) {
-        const newState = !isSubscribed;
-        setIsSubscribed(newState);
-        setDisplayCount((prev) => (newState ? prev + 1 : Math.max(0, prev - 1)));
-        toast.success(newState ? "Subscribed" : "Unsubscribed");
-        if (!newState) setIsNotified(false);
-      } else {
-        toast.error("Action failed");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     if (success) {
+  //       const newState = !isSubscribed;
+  //       setIsSubscribed(newState);
+  //       setDisplayCount((prev) => (newState ? prev + 1 : Math.max(0, prev - 1)));
+  //       toast.success(newState ? "Subscribed" : "Unsubscribed");
+  //       if (!newState) setIsNotified(false);
+  //     } else {
+  //       toast.error("Action failed");
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Something went wrong");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const toggleNotifications = () => {
     const newPref = notificationPref === "all" ? "none" : "all";
@@ -231,66 +232,34 @@ const ChannelPage = () => {
             )}
           </div>
 
-          <div className="flex gap-3 items-center">
-            <button
-              onClick={handleSubscribe}
-              className={`px-5 py-2.5 rounded-full text-sm font-semibold shadow-md transition-all flex items-center gap-2 ${
-                isSubscribed
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                  : "bg-red-600 hover:bg-red-700 text-white"
-              }`}
-            >
-              {isSubscribed ? (
-                <>
-                  <span>Subscribed</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                  </svg>
-                </>
-              ) : (
-                "Subscribe"
-              )}
-            </button>
+            <div className="flex gap-3 items-center"> 
+            <div className="flex gap-3 items-center">
+  <SubscriptionButton
+    channelId={channel._id}
+    isSubscribedInitially={isSubscribed}
+    isNotifiedInitially={notificationPref === "all"}
+    subscriberCount={subscribers.total}
+    onSubscribedChange={(newStatus) => {
+      setIsSubscribed(newStatus);
+      if (!newStatus) setNotificationPref("none");
+    }}
+    onNotificationChange={(newPref) => setNotificationPref(newPref)}
+  />
 
-            {isSubscribed && (
-              <button
-                onClick={toggleNotifications}
-                className={`p-2.5 rounded-full transition-colors ${
-                  notificationPref === "all" 
-                    ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
-                data-tooltip-id="notifications-tooltip"
-              >
-                {notificationPref === "all" ? (
-                  <Bell size={18} />
-                ) : (
-                  <BellOff size={18} />
-                )}
-                <ReactTooltip
-                  id="notifications-tooltip"
-                  place="bottom"
-                  content={
-                    notificationPref === "all"
-                      ? "Disable notifications"
-                      : "Enable notifications"
-                  }
-                />
-              </button>
-            )}
+  <button
+    onClick={toggleTheme}
+    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors"
+    data-tooltip-id="theme-tooltip"
+  >
+    {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+    <ReactTooltip
+      id="theme-tooltip"
+      place="bottom"
+      content={darkMode ? "Light mode" : "Dark mode"}
+    />
+  </button>
+</div>
 
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors"
-              data-tooltip-id="theme-tooltip"
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-              <ReactTooltip
-                id="theme-tooltip"
-                place="bottom"
-                content={darkMode ? "Light mode" : "Dark mode"}
-              />
-            </button>
           </div>
         </div>
       </div>
@@ -882,6 +851,18 @@ const ChannelPage = () => {
                     </div>
                   </div>
                 )}
+              </div>
+              <div className="mt-8">
+               <button>
+<SubscriptionButton
+  channelId={channel._id}
+  isSubscribedInitially={channel.channelIsSubscribedTo}
+  isNotifiedInitially={channel.notificationPref === "all"}
+  subscriberCount={channel.subscribersCount}
+/>
+
+               </button>
+               
               </div>
             </motion.div>
           )}

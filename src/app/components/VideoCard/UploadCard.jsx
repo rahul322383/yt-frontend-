@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 "use client"
 import React, { useState, useRef, useEffect, useCallback } from "react"
 import clsx from "clsx"

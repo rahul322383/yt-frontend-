@@ -31,7 +31,7 @@ const PlaylistVideoManager = () => {
 
   useEffect(() => {
     fetchPlaylist();
-  }, [fetchPlaylist]);
+  }, []);
 
   if (loading)
     return (

@@ -347,8 +347,9 @@ import SearchBar from "./app/home/SearchBar.jsx";
 import { SettingsTabs } from "./app/components/SettingsTabs/SettingsTabs.jsx";
 import LoadingSpinner from "./app/components/common/loadingSpinner.jsx";
 import Video from "./app/components/user/Video.jsx";
-
+import ThemeToggle from "./app/components/common/ThemeToggle.jsx";
 import "./index.css";
+
 
 // 🔄 Scroll to top
 const ScrollToTop = () => {
@@ -429,6 +430,7 @@ const App = () => {
     <AuthProvider>
       <Router>
         <ScrollToTop />
+         <ThemeToggle />
         <AppRoutes />
       </Router>
     </AuthProvider>

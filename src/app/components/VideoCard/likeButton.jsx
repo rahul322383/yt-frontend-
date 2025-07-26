@@ -32,7 +32,6 @@ const LikeButton = ({
   // Get token and user ID
   const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
   let currentUserId = null;
-
   if (token) {
     try {
       const decoded = jwtDecode(token);
@@ -45,8 +44,10 @@ const LikeButton = ({
   const fetchStats = useCallback(async () => {
     try {
       const { data } = await API.get(`/user/videos/${videoId}/like-count`);
+      
       const { likes = 0, dislikes = 0, upvoted = false, downvoted = false } = data.data || {};
       setState({ likes, dislikes, upvoted, downvoted: downvoted });
+   
     } catch (err) {
       console.error("Fetch like stats error", err);
     }

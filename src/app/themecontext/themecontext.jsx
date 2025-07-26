@@ -1,26 +1,26 @@
-import { createContext, useContext, useEffect, useState } from "react";
+// src/context/ThemeContext.jsx
+import React, { createContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext();
+export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // Use system's preferred theme as a fallback if no theme is stored in localStorage
-  const getInitialTheme = () => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme) return storedTheme;
-    
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  };
-
-  const [theme, setTheme] = useState(getInitialTheme);
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
-    // Apply theme class to document root
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("theme", theme);
-  }, [theme]); // Run effect when theme changes
+    const localTheme = localStorage.getItem("theme");
+    if (localTheme) {
+      setTheme(localTheme);
+      document.documentElement.classList.add(localTheme);
+    }
+  }, []);
 
-  const toggleTheme = () =>
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.documentElement.classList.remove(theme);
+    document.documentElement.classList.add(newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
@@ -28,5 +28,3 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
-
-export const useTheme = () => useContext(ThemeContext);

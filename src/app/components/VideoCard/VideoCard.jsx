@@ -94,7 +94,7 @@ const VideoCard = ({ video, onUpdated, currentUser }) => {
     }
     setIsUpdating(true);
     try {
-      await API.put(`/users/playlist/videos/${videoId}`, {
+      await API.put(`/user/playlist/videos/${videoId}`, {
         title: editTitle,
         description: editDesc,
       });
@@ -186,11 +186,12 @@ const VideoCard = ({ video, onUpdated, currentUser }) => {
 
         <div className="flex flex-wrap gap-2 hover:gap-3 cursor-pointer">
           <LikeButton
-            videoId={videoId}
-            initialLikeState={video.isLiked}
-            initialLikeCount={video.likes || 0}
-            initialDislikeCount={video.dislikes || 0}
-          />
+                  videoId={video.videoId || video._id}
+                  initialLikeState={video.isLiked}
+                  initialLikeCount={video.likes}
+                  initialDislikeCount={video.dislikes}
+                  
+                />
 
           <button
             onClick={handleWatchLater}

@@ -260,7 +260,8 @@ const SettingsPageHome = () => {
         ...prev,
         showTwoFactorSetup: true,
         twoFactorSecret: data.secret,
-        twoFactorCode: ""
+        twoFactorCode: "",
+        secret: uiState.twoFactorSecret,
       }));
     } catch (error) {
       toast.error("Failed to setup two-factor authentication");
@@ -273,6 +274,7 @@ const SettingsPageHome = () => {
       await API.post('/users/verify-2fa', {
         code: uiState.twoFactorCode,
         secret: uiState.twoFactorSecret
+        
       });
       
       setFormData(prev => ({ ...prev, twoFactorEnabled: true }));
