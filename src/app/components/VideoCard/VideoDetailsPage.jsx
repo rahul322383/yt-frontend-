@@ -432,7 +432,6 @@ import {
   FaTrash,
   FaEllipsisV
 } from "react-icons/fa";
-import { IoMdClose } from "react-icons/io";
 import { BsThreeDotsVertical } from "react-icons/bs";
 
 const VideoDetailPage = () => {
@@ -455,7 +454,8 @@ const VideoDetailPage = () => {
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isSidebarSticky, setIsSidebarSticky] = useState(true);
-
+  const [currentUser , setCurrentUser] = useState(null);
+  const [Subscribers, setSubscribers] = useState([]);
   const token = localStorage.getItem("accessToken");
   const isAuth = !!token;
   const isGuest = !user;
@@ -489,7 +489,7 @@ const fetchData = async () => {
     // Only fetch user if token exists
     if (token) {
       const userRes = await API.get("/users/me");
-      setUser(userRes.data.user);
+     setCurrentUser(userRes.data.user); 
       setWatchLater(userRes.data?.user?.watchLater?.includes(videoId) || false);
     }
 
@@ -525,6 +525,20 @@ const fetchData = async () => {
       toast.error(err.response?.data?.message || "Failed to update Watch Later");
     }
   };
+useEffect(() => {
+  if (video?.channelId) {
+    fetchSubscribers(video.channelId);
+  }
+}, [video]);
+
+const fetchSubscribers = async (channelId) => {
+  try {
+    const res = await API.get(`/users/subscribe/channel/${channelId}`);
+    setSubscribers(res.data.data);
+  } catch (err) {
+    toast.error("Error fetching subscribers");
+  }
+};
 
   const toggleShuffle = () => {
     setShuffle(!shuffle);
@@ -563,9 +577,6 @@ const fetchData = async () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [videoId]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
@@ -651,10 +662,13 @@ const fetchData = async () => {
 
                 <div className="flex gap-3 items-center">
                   <SubscriptionButton
-                    channelId={video.channelId}
-                    isSubscribedInitially={user?.subscriptions?.includes(video.channelId)}
-                    subscriberCount={video.subscriberCount}
-                  />
+  channelId={video.channelId}
+  isSubscribedInitially={video.isSubscribed}
+  subscriberCount={0}
+  isNotifiedInitially={video.notificationEnabled}
+  isOwnChannel={video.channelId === currentUser?.channelId}
+/>
+
                   
                   <div className="relative">
                     <button 
@@ -812,7 +826,8 @@ const fetchData = async () => {
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1 text-xs rounded">
-                          {v.duration || "0:00"}
+                         {v.duration ? v.duration : "0:00"}
+
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">

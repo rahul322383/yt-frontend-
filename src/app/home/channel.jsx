@@ -74,31 +74,6 @@ const ChannelPage = () => {
     }
   };
 
-  // const handleSubscribe = async () => {
-  //   if (!channelId || isLoading) return;
-
-  //   setIsLoading(true);
-  //   try {
-  //     const res = await API.post(`/users/subscribe/${channelId}`);
-  //     const { success } = res.data;
-
-  //     if (success) {
-  //       const newState = !isSubscribed;
-  //       setIsSubscribed(newState);
-  //       setDisplayCount((prev) => (newState ? prev + 1 : Math.max(0, prev - 1)));
-  //       toast.success(newState ? "Subscribed" : "Unsubscribed");
-  //       if (!newState) setIsNotified(false);
-  //     } else {
-  //       toast.error("Action failed");
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error("Something went wrong");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   const toggleNotifications = () => {
     const newPref = notificationPref === "all" ? "none" : "all";
     setNotificationPref(newPref);
@@ -235,7 +210,7 @@ const ChannelPage = () => {
             <div className="flex gap-3 items-center"> 
             <div className="flex gap-3 items-center">
   <SubscriptionButton
-    channelId={channel._id}
+    channelId={channel.channelId}
     isSubscribedInitially={isSubscribed}
     isNotifiedInitially={notificationPref === "all"}
     subscriberCount={subscribers.total}

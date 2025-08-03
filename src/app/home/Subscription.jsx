@@ -19,7 +19,7 @@ const fetchSubscribedChannels = async () => {
     const { data } = await API.get("/users/me");
     const channelId = data?.data?.channelId;
     const res = await API.get(`/users/subscribe/subscribed/${channelId}`);
-    const fetchedChannels = res.data.data.channels || []; // ✅ use the correct key
+    const fetchedChannels = res.data.data.channels || [];
     setChannels(fetchedChannels);
     setFilteredChannels(fetchedChannels);
   } catch (error) {

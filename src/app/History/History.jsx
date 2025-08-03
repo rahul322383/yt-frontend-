@@ -157,14 +157,15 @@ const HistoryPage = () => {
                       >
                         {video.title}
                       </h3>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        {video.owner?.username || "Unknown"} • {video.views || 0} views • {video.likes || 0} likes • {video.duration ? (
-                        <span className="ml-1">{video.duration}</span>
-                      ) : (
-                        <span className="ml-1">N/A</span>
-                      )}
-                        
-                      </div>
+<div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+  {video.owner?.username || "Unknown"} • {video.views || 0} views • {video.likeCount || 0} likes • {video.dislikeCount || 0} dislikes •{" "}
+  {video.duration ? (
+    <span className="ml-1">{video.duration}</span>
+  ) : (
+    <span className="ml-1">N/A</span>
+  )}
+</div>
+
                     </div>
                     <button
                       onClick={(e) => {

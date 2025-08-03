@@ -136,7 +136,7 @@ const VideoCard = ({ video, onUpdated, currentUser }) => {
       >
         <video
           ref={videoRef}
-          src={video.videoUrl}
+          src={video.videoUrl  || ""}
           className="w-full h-full object-cover transition-opacity duration-200 hover:opacity-100 "
           muted
           // playsInline

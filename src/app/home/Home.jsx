@@ -31,7 +31,7 @@ import API from "../../utils/axiosInstance.jsx";
 import ReactPlayer from "react-player";
 import "../../index.css";
 import { useAuth } from "../../context/AuthContext.jsx";
-
+import SearchBar from "./SearchBar.jsx";
 // Skeleton loader while videos are fetching
 const SkeletonCard = () => (
   <div className="animate-pulse rounded-xl bg-gray-300 dark:bg-gray-700 h-72 w-full" />
@@ -152,6 +152,7 @@ const HomePage = ({ initialView = "trending" }) => {
         
         const endpoint = view === "trending" ? "/videos/trending" : "/users/videos";
         const res = await API.get(endpoint, { headers });
+        console.log("Fetched videos:", res.data);
         
         if (res?.data?.success && Array.isArray(res.data.data)) {
           setVideos(res.data.data);
@@ -171,6 +172,7 @@ const HomePage = ({ initialView = "trending" }) => {
 
   useEffect(() => {
     if (videos.length === 0) return;
+    
 
     const fetchLikeDislikeCounts = async () => {
       try {
@@ -229,15 +231,25 @@ const HomePage = ({ initialView = "trending" }) => {
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
-  const filteredVideos = useMemo(() => {
-    const query = searchQuery.toLowerCase();
-    return videos.filter(
-      (v) =>
-        v.title?.toLowerCase().includes(query) ||
-        v.description?.toLowerCase().includes(query) ||
-        v.creatorName?.toLowerCase().includes(query)
+const filteredVideos = useMemo(() => {
+  const query = searchQuery.toLowerCase();
+  return videos.filter((v) => {
+    return (
+      v.title?.toLowerCase().includes(query) ||
+      v.description?.toLowerCase().includes(query) ||
+      v.creatorName?.toLowerCase().includes(query)
+      || v.channelName?.toLowerCase().includes(query)
+      || v.tags?.some((tag) => tag.toLowerCase().includes(query))
+      || v.videoId?.toLowerCase().includes(query)
+      || v._id?.toLowerCase().includes(query)
+      || v.channelId?.toLowerCase().includes(query)
+      || v.category?.toLowerCase().includes(query)
     );
-  }, [searchQuery, videos]);
+  });
+}, [searchQuery, videos]);
+
+
+
 
   const isActive = (path) => location.pathname === path;
 
@@ -263,21 +275,14 @@ const HomePage = ({ initialView = "trending" }) => {
           </Link>
         </div>
 
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hidden md:flex items-center bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full flex-1 max-w-2xl mx-4"
-        >
-          <input
-            type="text"
-            placeholder="Search..."
-            className="bg-transparent outline-none text-gray-800 dark:text-white px-2 w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit" className="px-2">
-            <FaSearch className="text-gray-500 dark:text-white" />
-          </button>
-        </form>
+<div className="hidden md:flex items-center flex-1 max-w-2xl mx-4">
+  <SearchBar 
+    searchQuery={searchQuery}
+    setSearchQuery={setSearchQuery}
+    handleSearchSubmit={handleSearchSubmit}
+    placeholder="Search videos..."
+  />
+</div>
 
         <div className="flex items-center space-x-8">
           <button
