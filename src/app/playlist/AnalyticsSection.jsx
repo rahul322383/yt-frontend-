@@ -11,11 +11,12 @@ import {
   Tooltip,
   CartesianGrid,
   ResponsiveContainer,
-  Cell
+  Cell,
+  Legend
 } from "recharts";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
-import { Loader2, PlusCircle, BarChart2, Video, List } from "lucide-react";
+import { Loader2, PlusCircle, BarChart2, Video, List, X, ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { Button } from "../components/ui/button.jsx";
 import API from "../../utils/axiosInstance.jsx";
 import "../../index.css";
@@ -31,10 +32,14 @@ const AnalyticsSection = () => {
   const [analytics, setAnalytics] = useState({
     totalVideos: 0,
     totalViews: 0,
+    totalLikes: 0,
+    totalDislikes: 0,
+    totalComments: 0,
     viewsPerVideo: [],
     playlists: []
   });
   const [loading, setLoading] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const navigate = useNavigate();
 
   const fetchAnalyticsData = async () => {
@@ -46,6 +51,9 @@ const AnalyticsSection = () => {
       setAnalytics({
         totalVideos: data.totalVideos || 0,
         totalViews: data.totalViews || 0,
+        totalLikes: data.totalLikes || 0,
+        totalDislikes: data.totalDislikes || 0,
+        totalComments: data.totalComments || 0,
         viewsPerVideo: Array.isArray(data.viewsPerVideo) ? data.viewsPerVideo : [],
         playlists: Array.isArray(data.playlists) ? data.playlists : []
       });
@@ -55,6 +63,9 @@ const AnalyticsSection = () => {
       setAnalytics({
         totalVideos: 0,
         totalViews: 0,
+        totalLikes: 0,
+        totalDislikes: 0,
+        totalComments: 0,
         viewsPerVideo: [],
         playlists: []
       });
@@ -80,14 +91,21 @@ const AnalyticsSection = () => {
       .map(video => ({
         name: video.title?.length > 12 ? `${video.title.substring(0, 10)}...` : video.title,
         views: video.views || 0,
+        likes: video.likes || 0,
+        dislikes: video.dislikes || 0,
+        comments: video.comments || 0,
         videoId: video.videoId,
-        fullTitle: video.title
+        fullTitle: video.title,
+        videoUrl: video.videoUrl,
+        uploadedAt: video.uploadedAt
       }));
   };
 
-  const handleVideoClick = (videoId) => {
-    if (videoId) {
-      navigate(`/video/${videoId}`);
+  const handleVideoClick = (video) => {
+    if (video.videoUrl) {
+      setSelectedVideo(video);
+    } else if (video.videoId) {
+      navigate(`/video/${video.videoId}`);
     }
   };
 
@@ -95,6 +113,15 @@ const AnalyticsSection = () => {
     if (playlistId) {
       navigate(`/playlists/${playlistId}`);
     }
+  };
+
+  const closeVideoModal = () => {
+    setSelectedVideo(null);
+  };
+
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   if (loading) {
@@ -137,6 +164,60 @@ const AnalyticsSection = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      {/* Video Modal */}
+      {selectedVideo && (
+        <motion.div 
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div 
+            className="relative w-full max-w-4xl bg-black rounded-lg overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+          >
+            <button 
+              onClick={closeVideoModal}
+              className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="aspect-video w-full bg-black">
+              <video
+                src={selectedVideo.videoUrl}
+                className="w-full h-full object-contain"
+                controls
+                autoPlay
+                title={selectedVideo.fullTitle || "Video"}
+              />
+            </div>
+            
+            <div className="p-4 bg-black text-white">
+              <h3 className="text-xl font-bold mb-2">{selectedVideo.fullTitle}</h3>
+              <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+                <span>{selectedVideo.views?.toLocaleString() || 0} views</span>
+                <span>{formatDate(selectedVideo.uploadedAt)}</span>
+                <div className="flex items-center gap-1">
+                  <ThumbsUp className="w-4 h-4" />
+                  <span>{selectedVideo.likes || 0}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <ThumbsDown className="w-4 h-4" />
+                  <span>{selectedVideo.dislikes || 0}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>{selectedVideo.comments || 0}</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       {/* Header Section */}
       <motion.div
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
@@ -195,29 +276,30 @@ const AnalyticsSection = () => {
           { 
             label: "Playlists", 
             value: analytics.playlists.length,
-            icon: <List className="w-5 h-5 text-blue-600" />,
-            color: "bg-blue-100"
+            icon: <List className="w-5 h-5 text-blue-600 cursor-pointer" />,
+            color: "bg-blue-100 cursor-pointer",
+            onClick: () => navigate("/playlists")
           },
-        {
-  label: "Videos", 
-  value: analytics.totalVideos,
-  icon: <Video className="w-5 h-5 text-green-600 cursor-pointer" />,
-  color: "bg-green-100",
-  onClick: () => navigate("/videos") // ✅ fixed here
-},
-
-
+          { 
+            label: "Videos", 
+            value: analytics.totalVideos,
+            icon: <Video className="w-5 h-5 text-green-600 cursor-pointer" />,
+            color: "bg-green-100 cursor-pointer",
+            onClick: () => navigate("/videos")
+          },
           { 
             label: "Total Views", 
             value: analytics.totalViews,
-            icon: <BarChart2 className="w-5 h-5 text-purple-600" />,
-            color: "bg-purple-100"
+            icon: <BarChart2 className="w-5 h-5 text-purple-600 cursor-pointer" />,
+            color: "bg-purple-100 cursor-pointer",
+            onClick: () => navigate("/views")
           },
           { 
-            label: "Avg. Views", 
-            value: calculateAverageViews(),
-            icon: <span className="text-lg font-bold text-amber-600">Ø</span>,
-            color: "bg-amber-100"
+            label: "Engagement", 
+            value: `${analytics.totalLikes} Likes`,
+            icon: <ThumbsUp className="w-5 h-5 text-amber-600" />,
+            color: "bg-amber-100",
+            secondaryValue: `${analytics.totalComments} Comments`
           },
         ].map((stat, index) => (
           <motion.div
@@ -226,6 +308,7 @@ const AnalyticsSection = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
+            onClick={stat.onClick}
           >
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${stat.color}`}>
@@ -236,6 +319,9 @@ const AnalyticsSection = () => {
                 <p className="text-2xl font-bold mt-1">
                   {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                 </p>
+                {stat.secondaryValue && (
+                  <p className="text-sm text-gray-500 mt-1">{stat.secondaryValue}</p>
+                )}
               </div>
             </div>
           </motion.div>
@@ -268,15 +354,15 @@ const AnalyticsSection = () => {
         </div>
         
         {analytics.viewsPerVideo.length > 0 ? (
-          <div className="h-[300px] sm:h-[400px]">
+          <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={prepareChartData()}
                 margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                 layout="vertical"
                 onClick={(e) => {
-                  if (e.activePayload?.[0]?.payload?.videoId) {
-                    handleVideoClick(e.activePayload[0].payload.videoId);
+                  if (e.activePayload?.[0]?.payload) {
+                    handleVideoClick(e.activePayload[0].payload);
                   }
                 }}
               >
@@ -298,23 +384,51 @@ const AnalyticsSection = () => {
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                     border: 'none'
                   }}
-                  formatter={(value, name, props) => [
-                    `${value} views`,
-                    props.payload.fullTitle
-                  ]}
+                  formatter={(value, name, props) => {
+                    if (name === 'views') return [`${value} views`, props.payload.fullTitle];
+                    if (name === 'likes') return [`${value} likes`, props.payload.fullTitle];
+                    if (name === 'dislikes') return [`${value} dislikes`, props.payload.fullTitle];
+                    if (name === 'comments') return [`${value} comments`, props.payload.fullTitle];
+                    return [value, name];
+                  }}
+                />
+                <Legend 
+                  formatter={(value) => {
+                    if (value === 'views') return 'Views';
+                    if (value === 'likes') return 'Likes';
+                    if (value === 'dislikes') return 'Dislikes';
+                    if (value === 'comments') return 'Comments';
+                    return value;
+                  }}
                 />
                 <Bar 
                   dataKey="views"
+                  name="Views"
                   radius={[0, 4, 4, 0]}
                   cursor="pointer"
-                >
-                  {prepareChartData().map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={`hsl(210, 80%, ${60 - (index * 5)}%)`} 
-                    />
-                  ))}
-                </Bar>
+                  fill="#3b82f6"
+                />
+                <Bar 
+                  dataKey="likes"
+                  name="Likes"
+                  radius={[0, 4, 4, 0]}
+                  cursor="pointer"
+                  fill="#10b981"
+                />
+                <Bar 
+                  dataKey="dislikes"
+                  name="Dislikes"
+                  radius={[0, 4, 4, 0]}
+                  cursor="pointer"
+                  fill="#ef4444"
+                />
+                <Bar 
+                  dataKey="comments"
+                  name="Comments"
+                  radius={[0, 4, 4, 0]}
+                  cursor="pointer"
+                  fill="#8b5cf6"
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -354,17 +468,19 @@ const AnalyticsSection = () => {
                 key={video.videoId}
                 className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all cursor-pointer group"
                 whileHover={{ y: -4 }}
-                onClick={() => handleVideoClick(video.videoId)}
+                onClick={() => handleVideoClick(video)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 + (index * 0.1) }}
               >
                 <div className="relative aspect-video bg-gray-100">
-                  {video.thumbnailUrl ? (
-                    <img
-                      src={video.thumbnailUrl}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  {video.videoUrl ? (
+                    <video
+                      src={video.videoUrl}
+                      className="w-full h-full object-cover"
+                      muted
+                      loop
+                      playsInline
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -375,21 +491,24 @@ const AnalyticsSection = () => {
                     {video.duration || '0:00'}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <span className="text-white text-sm font-medium">
-                      {video.views?.toLocaleString() || 0} views
-                    </span>
+                    <div className="flex gap-3 text-white text-sm">
+                      <span className="flex items-center gap-1">
+                        <ThumbsUp className="w-3 h-3" />
+                        {video.likes || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" />
+                        {video.comments || 0}
+                      </span>
+                      <span>{video.views?.toLocaleString() || 0} views</span>
+                    </div>
                   </div>
                 </div>
                 <div className="p-4">
                   <h3 className="font-medium line-clamp-2">{video.title}</h3>
                   <div className="flex justify-between items-center mt-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-                        {video.channelName?.[0] || 'C'}
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        {video.channelName || 'Channel'}
-                      </span>
+                    <div className="text-sm text-gray-500">
+                      {formatDate(video.uploadedAt)}
                     </div>
                     {video.playlistId && (
                       <Button

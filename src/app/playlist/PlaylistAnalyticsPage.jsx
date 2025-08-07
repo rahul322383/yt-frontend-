@@ -1,6 +1,4 @@
 /* eslint-disable no-unused-vars */
-
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,16 +19,23 @@ import "../../index.css";
 
 const AnalyticsPlaylistsPage = () => {
   const [playlistAnalytics, setPlaylistAnalytics] = useState([]);
-  const [videoAnalytics, setVideoAnalytics] = useState([]);
+  const [videoAnalytics, setVideoAnalytics] = useState({
+    totalVideos: 0,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
+    viewsPerVideo: []
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    navigate("/login");
-  }
-
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
@@ -63,7 +68,7 @@ const AnalyticsPlaylistsPage = () => {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [navigate]);
 
   // Calculate metrics based on API response structure
   const metrics = {
@@ -77,19 +82,20 @@ const AnalyticsPlaylistsPage = () => {
 
   // Prepare chart data with navigation handlers
   const playlistBarData = playlistAnalytics.map((playlist) => ({
-    name: `Playlist ${playlist.playlistId.slice(-4)}`,
+    name: playlist.playlistTitle || `Playlist ${playlist.playlistId.slice(-4)}`,
     views: playlist.totalViews || 0,
     id: playlist.playlistId,
     onClick: () => navigate(`/playlists/${playlist.playlistId}`)
   }));
 
-const videoBarData = videoAnalytics?.viewsPerVideo?.map((video) => ({
-  name: video.title || `Video ${video.videoId.slice(-4)}`,
-  views: video.views || 0,
-  id: video.videoId,
-  onClick: () => navigate(`/video/${video.videoId}`),
-})) || []; // fallback to empty array
-
+  const videoBarData = videoAnalytics.viewsPerVideo.map((video) => ({
+    name: video.title || `Video ${video.videoId.slice(-4)}`,
+    views: video.views || 0,
+    id: video.videoId,
+    likes: video.likes || 0,
+    comments: video.comments || 0,
+    onClick: () => navigate(`/video/${video.videoId}`),
+  }));
 
   // Color palette
   const COLORS = {
@@ -117,15 +123,15 @@ const videoBarData = videoAnalytics?.viewsPerVideo?.map((video) => ({
           {type === 'video' && (
             <>
               <p className="text-sm">
-                Likes: <span className="font-semibold">{payload[0].payload.likes || 0}</span>
+                Likes: <span className="font-semibold">{data.likes || 0}</span>
               </p>
               <p className="text-sm">
-                Comments: <span className="font-semibold">{payload[0].payload.comments || 0}</span>
+                Comments: <span className="font-semibold">{data.comments || 0}</span>
               </p>
             </>
           )}
           <button 
-            onClick={() => navigate(type === 'playlist' ? `/playlist/${data.id}` : `/video/${data.id}`)}
+            onClick={() => navigate(type === 'playlist' ? `/playlists/${data.id}` : `/video/${data.id}`)}
             className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center"
           >
             View details <ArrowRight className="ml-1 w-3 h-3" />
@@ -202,7 +208,7 @@ const videoBarData = videoAnalytics?.viewsPerVideo?.map((video) => ({
         {[
           { label: "Playlists", value: metrics.playlists, icon: '📚', onClick: () => navigate("/playlist") },
           { label: "Videos", value: metrics.videos, icon: '🎬', onClick: () => navigate("/videos") },
-          { label: "Playlist Views", value: metrics.playlistViews.toLocaleString(), icon: '👀' },
+          { label: "Playlist Views", value: metrics.playlistViews.toLocaleString(), icon: '👀', onClick: () => navigate("/views") },
           { label: "Video Views", value: metrics.videoViews.toLocaleString(), icon: '📺' },
           { label: "Likes", value: metrics.likes.toLocaleString(), icon: '👍' },
           { label: "Comments", value: metrics.comments.toLocaleString(), icon: '💬' },
@@ -260,7 +266,7 @@ const videoBarData = videoAnalytics?.viewsPerVideo?.map((video) => ({
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => navigate(`/playlists/${data.id}`)}
                   >
-                    {playlistBarData.map((entry, index) => (
+                    {playlistBarData.slice(0, 5).map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
                         fill={COLORS.playlist} 
@@ -322,7 +328,7 @@ const videoBarData = videoAnalytics?.viewsPerVideo?.map((video) => ({
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => navigate(`/video/${data.id}`)}
                   >
-                    {videoBarData.map((entry, index) => (
+                    {videoBarData.slice(0, 5).map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
                         fill={COLORS.video} 

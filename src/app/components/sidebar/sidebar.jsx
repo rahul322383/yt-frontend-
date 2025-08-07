@@ -68,7 +68,7 @@ const Sidebar = ({ user, handleLogout }) => {
     {
       title: "Channel",
       items: [
-        { to: "/AnalyticsSection", label: "Manager", icon: Folder },
+        { to: "/AnalyticsSection", label: "AnalyticsSection", icon: Folder },
         { to: "/subscriptions", label: "Subscriptions", icon: Tv },
         { to: "/views", label: "Views", icon: Eye },
         { to: "/analytics", label: "Analytics", icon: BarChart2 }

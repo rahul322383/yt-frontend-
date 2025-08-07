@@ -1,8 +1,7 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, PlusCircle, BarChart2, Film, Eye, Heart, MessageSquare } from "lucide-react";
+import { Loader2, PlusCircle, BarChart2, Film, Eye, Heart, MessageSquare, ChevronRight } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -12,23 +11,33 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Cell,
+  Legend
 } from "recharts";
 import API from "../../utils/axiosInstance.jsx";
 import "../../index.css";
 
 const AnalyticsPlaylistsPage = () => {
-  const [playlistAnalytics, setPlaylistAnalytics] = useState([]);
-  const [videoAnalytics, setVideoAnalytics] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    playlists: [],
+    videos: [],
+    totals: {
+      totalVideos: 0,
+      totalViews: 0,
+      totalLikes: 0,
+      totalComments: 0
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("playlists");
+  const [timeRange, setTimeRange] = useState("all");
   const navigate = useNavigate();
 
   // Icons for stats cards
   const statIcons = {
     "Total Playlists": <Film className="w-5 h-5 text-indigo-500" />,
     "Total Videos": <BarChart2 className="w-5 h-5 text-blue-500" />,
-    "Playlist Views": <Eye className="w-5 h-5 text-green-500" />,
-    "Video Views": <Eye className="w-5 h-5 text-purple-500" />,
+    "Total Views": <Eye className="w-5 h-5 text-green-500" />,
+    "Avg. Views": <Eye className="w-5 h-5 text-purple-500" />,
     "Total Likes": <Heart className="w-5 h-5 text-red-500" />,
     "Total Comments": <MessageSquare className="w-5 h-5 text-yellow-500" />,
   };
@@ -42,8 +51,16 @@ const AnalyticsPlaylistsPage = () => {
           API.get(`/users/analytics/playlist/videos`, { withCredentials: true }),
         ]);
         
-        setPlaylistAnalytics(playlistRes.data?.data || []);
-        setVideoAnalytics(videoRes.data?.data?.viewsPerVideo || []);
+        setAnalyticsData({
+          playlists: playlistRes.data?.data || [],
+          videos: videoRes.data?.data?.viewsPerVideo || [],
+          totals: {
+            totalVideos: videoRes.data?.data?.totalVideos || 0,
+            totalViews: videoRes.data?.data?.totalViews || 0,
+            totalLikes: videoRes.data?.data?.totalLikes || 0,
+            totalComments: videoRes.data?.data?.totalComments || 0
+          }
+        });
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
       } finally {
@@ -52,50 +69,56 @@ const AnalyticsPlaylistsPage = () => {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [timeRange]);
 
   // Calculate statistics
   const stats = [
-    { label: "Total Playlists", value: playlistAnalytics.length },
-    { label: "Total Videos", value: videoAnalytics.length },
+    { label: "Total Playlists", value: analyticsData.playlists.length },
+    { label: "Total Videos", value: analyticsData.totals.totalVideos },
+    { label: "Total Views", value: analyticsData.totals.totalViews },
     { 
-      label: "Playlist Views", 
-      value: playlistAnalytics.reduce((sum, item) => sum + (item.totalViews || 0), 0) 
+      label: "Avg. Views", 
+      value: analyticsData.videos.length > 0 
+        ? Math.round(analyticsData.totals.totalViews / analyticsData.videos.length) 
+        : 0 
     },
-    { 
-      label: "Video Views", 
-      value: videoAnalytics.reduce((sum, item) => sum + (item.views || 0), 0) 
-    },
-    { 
-      label: "Total Likes", 
-      value: videoAnalytics.reduce((sum, item) => sum + (item.like || 0), 0) 
-    },
-    { 
-      label: "Total Comments", 
-      value: videoAnalytics.reduce((sum, item) => sum + (item.comment || 0), 0) 
-    }
+    { label: "Total Likes", value: analyticsData.totals.totalLikes },
+    { label: "Total Comments", value: analyticsData.totals.totalComments }
   ];
 
   // Prepare chart data
-  const playlistBarData = playlistAnalytics
+  const playlistBarData = analyticsData.playlists
     .map((p, idx) => ({
       name: p.name || `Playlist ${idx + 1}`,
       views: p.totalViews || 0,
+      videos: p.videoCount || 0,
       id: p._id || idx,
+      playlistId: p.playlistId || p._id // Ensure we have playlistId for navigation
     }))
     .sort((a, b) => b.views - a.views)
-    .slice(0, 10); // Limit to top 10 playlists
+    .slice(0, 8);
 
-  const videoBarData = videoAnalytics
+  const videoBarData = analyticsData.videos
     .map((video) => ({
-      name: video.title,
+      name: video.title || "Untitled Video",
       views: video.views || 0,
-      id: video._id,
+      likes: video.likes || 0,
+      comments: video.comments || 0,
+      id: video.videoId,
     }))
     .sort((a, b) => b.views - a.views)
-    .slice(0, 10); // Limit to top 10 videos
+    .slice(0, 8);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+  const COLORS = ['#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#F97316', '#F59E0B', '#10B981', '#3B82F6'];
+
+  // Navigation handlers
+  const handlePlaylistClick = (playlistId) => {
+    navigate(`/playlists/${playlistId}`);
+  };
+
+  const handleVideoClick = () => {
+    navigate(`/video`);
+  };
 
   if (loading) {
     return (
@@ -106,7 +129,7 @@ const AnalyticsPlaylistsPage = () => {
     );
   }
 
-  if (!playlistAnalytics.length && !videoAnalytics.length) {
+  if (!analyticsData.playlists.length && !analyticsData.videos.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 p-6 text-center">
         <div className="bg-indigo-100 dark:bg-indigo-900/30 p-4 rounded-full">
@@ -141,27 +164,44 @@ const AnalyticsPlaylistsPage = () => {
             Track performance of your playlists and videos
           </p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-          <button
-            onClick={() => setActiveTab("playlists")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              activeTab === "playlists"
-                ? "bg-indigo-600 text-white shadow-md"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-            }`}
-          >
-            Playlists
-          </button>
-          <button
-            onClick={() => setActiveTab("videos")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              activeTab === "videos"
-                ? "bg-indigo-600 text-white shadow-md"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-            }`}
-          >
-            Videos
-          </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+            {["all", "7d", "30d"].map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-3 py-1 text-sm rounded-md transition-all ${
+                  timeRange === range
+                    ? "bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                {range === "all" ? "All Time" : range === "7d" ? "7 Days" : "30 Days"}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("playlists")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                activeTab === "playlists"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              Playlists
+            </button>
+            <button
+              onClick={() => setActiveTab("videos")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                activeTab === "videos"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              Videos
+            </button>
+          </div>
         </div>
       </div>
 
@@ -190,7 +230,7 @@ const AnalyticsPlaylistsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-8">
         {/* Chart Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -199,8 +239,8 @@ const AnalyticsPlaylistsPage = () => {
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {activeTab === "playlists" 
-                ? `${playlistAnalytics.length} playlists analyzed` 
-                : `${videoAnalytics.length} videos analyzed`}
+                ? `${analyticsData.playlists.length} playlists analyzed` 
+                : `${analyticsData.videos.length} videos analyzed`}
             </p>
           </div>
           <button
@@ -250,18 +290,24 @@ const AnalyticsPlaylistsPage = () => {
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                         color: '#111827'
                       }}
-                      formatter={(value) => [value.toLocaleString(), "Views"]}
+                      formatter={(value, name) => [value.toLocaleString(), name === 'views' ? 'Views' : 'Videos']}
                       labelFormatter={(label) => `Playlist: ${label}`}
                     />
+                    <Legend />
                     <Bar 
                       dataKey="views" 
+                      name="Views"
                       radius={[4, 4, 0, 0]}
                       barSize={30}
-                    >
-                      {playlistBarData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
+                      fill="#6366F1"
+                    />
+                    <Bar 
+                      dataKey="videos" 
+                      name="Videos"
+                      radius={[4, 4, 0, 0]}
+                      barSize={30}
+                      fill="#8B5CF6"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -312,18 +358,35 @@ const AnalyticsPlaylistsPage = () => {
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                         color: '#111827'
                       }}
-                      formatter={(value) => [value.toLocaleString(), "Views"]}
+                      formatter={(value, name) => {
+                        const label = name === 'views' ? 'Views' : 
+                                     name === 'likes' ? 'Likes' : 'Comments';
+                        return [value.toLocaleString(), label];
+                      }}
                       labelFormatter={(label) => `Video: ${label}`}
                     />
+                    <Legend />
                     <Bar 
                       dataKey="views" 
+                      name="Views"
                       radius={[4, 4, 0, 0]}
                       barSize={30}
-                    >
-                      {videoBarData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
+                      fill="#6366F1"
+                    />
+                    <Bar 
+                      dataKey="likes" 
+                      name="Likes"
+                      radius={[4, 4, 0, 0]}
+                      barSize={30}
+                      fill="#EC4899"
+                    />
+                    <Bar 
+                      dataKey="comments" 
+                      name="Comments"
+                      radius={[4, 4, 0, 0]}
+                      barSize={30}
+                      fill="#F59E0B"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -339,6 +402,71 @@ const AnalyticsPlaylistsPage = () => {
               </div>
             )
           )}
+        </div>
+      </div>
+
+      {/* Top Performers List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Top Playlists */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Film className="w-5 h-5 text-indigo-500" />
+              Top Playlists
+            </h3>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {playlistBarData.slice(0, 5).map((playlist, index) => (
+              <div
+                key={index}
+                className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                onClick={() => handlePlaylistClick(playlist.playlistId || playlist.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">
+                      {playlist.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {playlist.views.toLocaleString()} views • {playlist.videos} videos
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top Videos */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Film className="w-5 h-5 text-blue-500" />
+              Top Videos
+            </h3>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {videoBarData.slice(0, 5).map((video, index) => (
+              <div
+                key={index}
+                className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                onClick={() => handleVideoClick(video.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">
+                      {video.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {video.views.toLocaleString()} views • {video.likes} likes
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

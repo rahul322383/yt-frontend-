@@ -15,7 +15,7 @@ import {
   CardFooter,
 } from "../components/ui/card.jsx";
 import { Button } from "../components/ui/button.jsx";
-import { Input } from "../components/ui/Input.jsx";
+import { Input } from "../components/ui/input.jsx";
 import Textarea from "../components/ui/textarea.jsx";
 import Label from "../components/ui/label.jsx";
 import API from "../../utils/axiosInstance.jsx";
@@ -63,7 +63,7 @@ const CreatePlaylistPage = () => {
         setPlaylistVideos(playlist.videos);
         setSelectedVideos(playlist.videos.map(v => v._id));
       } else {
-        fetchPlaylistVideosById(id);
+        // fetchPlaylistVideosById(id);
       }
     } catch (err) {
       console.error("Error loading playlist:", err);
@@ -72,17 +72,17 @@ const CreatePlaylistPage = () => {
     }
   };
 
-  const fetchPlaylistVideosById = async (playlistId) => {
-    try {
-      const res = await API.get(`/users/playlist/videos/${playlistId}`);
-      const videos = res.data?.data?.videos || [];
-      setPlaylistVideos(videos);
-      setSelectedVideos(videos.map(v => v._id));
-    } catch (err) {
-      console.error("Error fetching playlist videos:", err);
-      toast.error("Failed to load playlist videos");
-    }
-  };
+  // const fetchPlaylistVideosById = async (playlistId) => {
+  //   try {
+  //     const res = await API.get(`/users/playlist/videos/${playlistId}`);
+  //     const videos = res.data?.data?.videos || [];
+  //     setPlaylistVideos(videos);
+  //     setSelectedVideos(videos.map(v => v._id));
+  //   } catch (err) {
+  //     console.error("Error fetching playlist videos:", err);
+  //     toast.error("Failed to load playlist videos");
+  //   }
+  // };
 
   const fetchAvailableVideos = async () => {
     try {

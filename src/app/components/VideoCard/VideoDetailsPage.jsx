@@ -661,15 +661,14 @@ const fetchSubscribers = async (channelId) => {
                 </div>
 
                 <div className="flex gap-3 items-center">
-                  <SubscriptionButton
-  channelId={video.channelId}
-  isSubscribedInitially={video.isSubscribed}
-  subscriberCount={0}
-  isNotifiedInitially={video.notificationEnabled}
-  isOwnChannel={video.channelId === currentUser?.channelId}
+                
+<SubscriptionButton
+  channelId={video?.channelId}
+  isSubscribedInitially={video?.isSubscribed}
+  isNotifiedInitially={video?.notificationEnabled}
+  subscriberCount={video?.subscriberCount || 0}
+  isOwnChannel={user?.channelId === video?.channelId}
 />
-
-                  
                   <div className="relative">
                     <button 
                       onClick={() => setShowMenu(!showMenu)}

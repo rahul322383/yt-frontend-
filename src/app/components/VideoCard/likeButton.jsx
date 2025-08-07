@@ -1,3 +1,4 @@
+
 /* eslint-disable no-unused-vars */
 "use client";
 import { useEffect, useState, useCallback } from "react";
@@ -29,9 +30,9 @@ const LikeButton = ({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null); // 'like' or 'dislike'
 
-  // Get token and user ID
   const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
   let currentUserId = null;
+
   if (token) {
     try {
       const decoded = jwtDecode(token);
@@ -41,21 +42,21 @@ const LikeButton = ({
     }
   }
 
+  // ✅ Fetch like/dislike stats from server
   const fetchStats = useCallback(async () => {
     try {
       const { data } = await API.get(`/user/videos/${videoId}/like-count`);
-      
       const { likes = 0, dislikes = 0, upvoted = false, downvoted = false } = data.data || {};
-      setState({ likes, dislikes, upvoted, downvoted: downvoted });
-   
+      setState({ likes, dislikes, upvoted, downvoted });
     } catch (err) {
       console.error("Fetch like stats error", err);
     }
   }, [videoId]);
 
+  // ✅ Re-fetch data when videoId changes
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (videoId) fetchStats();
+  }, [videoId, fetchStats]);
 
   const handleGuestInteraction = () => {
     setShowLoginPrompt(true);
@@ -64,7 +65,7 @@ const LikeButton = ({
       autoClose: 2000,
     });
   };
-  
+
   const toggle = async (actionType) => {
     if (!token || !currentUserId) {
       handleGuestInteraction();
@@ -74,7 +75,7 @@ const LikeButton = ({
     const isLike = actionType === "like";
     const alreadyActive = isLike ? state.upvoted : state.downvoted;
 
-    // Optimistic UI update
+    // 🔄 Optimistic UI update
     setState((prev) => {
       const newState = { ...prev };
       if (isLike) {
@@ -109,10 +110,11 @@ const LikeButton = ({
           withCredentials: true,
         }
       );
+      // 🔁 Re-fetch accurate data after success
+      fetchStats();
     } catch (err) {
       console.error("Error toggling like:", err);
-      // Revert on error
-      fetchStats();
+      fetchStats(); // fallback
     } finally {
       setLoading(false);
       setTimeout(() => setAnim(null), 300);
@@ -121,18 +123,18 @@ const LikeButton = ({
 
   return (
     <div className="relative flex items-center gap-3">
-      {/* Like Button */}
+      {/* 👍 Like Button */}
       <div className="relative">
         <motion.button
           onClick={() => toggle("like")}
           disabled={loading}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onHoverStart={() => !token && setHoveredButton('like')}
+          onHoverStart={() => !token && setHoveredButton("like")}
           onHoverEnd={() => setHoveredButton(null)}
           className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors duration-200 ${
-            state.upvoted 
-              ? "bg-red-500/10 text-red-500" 
+            state.upvoted
+              ? "bg-red-500/10 text-red-500"
               : "bg-gray-100 hover:bg-gray-200 text-gray-700"
           } ${!token ? "cursor-not-allowed" : ""}`}
         >
@@ -144,10 +146,10 @@ const LikeButton = ({
           </motion.div>
           <span className="text-sm font-medium">{state.likes}</span>
         </motion.button>
-        
-        {/* Hover Tooltip for Like */}
-        {!token && hoveredButton === 'like' && (
-          <motion.div 
+
+        {/* 🧭 Tooltip */}
+        {!token && hoveredButton === "like" && (
+          <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
@@ -158,18 +160,18 @@ const LikeButton = ({
         )}
       </div>
 
-      {/* Dislike Button */}
+      {/* 👎 Dislike Button */}
       <div className="relative">
         <motion.button
           onClick={() => toggle("dislike")}
           disabled={loading}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onHoverStart={() => !token && setHoveredButton('dislike')}
+          onHoverStart={() => !token && setHoveredButton("dislike")}
           onHoverEnd={() => setHoveredButton(null)}
           className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors duration-200 ${
-            state.downvoted 
-              ? "bg-blue-500/10 text-blue-500" 
+            state.downvoted
+              ? "bg-blue-500/10 text-blue-500"
               : "bg-gray-100 hover:bg-gray-200 text-gray-700"
           } ${!token ? "cursor-not-allowed" : ""}`}
         >
@@ -181,10 +183,10 @@ const LikeButton = ({
           </motion.div>
           <span className="text-sm font-medium">{state.dislikes}</span>
         </motion.button>
-        
-        {/* Hover Tooltip for Dislike */}
-        {!token && hoveredButton === 'dislike' && (
-          <motion.div 
+
+        {/* 🧭 Tooltip */}
+        {!token && hoveredButton === "dislike" && (
+          <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
@@ -195,7 +197,7 @@ const LikeButton = ({
         )}
       </div>
 
-      {/* Login Prompt */}
+      {/* 🔐 Login Prompt */}
       <AnimatePresence>
         {showLoginPrompt && (
           <motion.div
@@ -231,7 +233,7 @@ const LikeButton = ({
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );

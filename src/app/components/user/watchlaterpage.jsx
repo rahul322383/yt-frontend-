@@ -23,7 +23,6 @@ const WatchLaterPage = () => {
       setLoading(false);
     }
   };
-
   const removeFromWatchLater = async (videoId) => {
     try {
       await API.delete(`/users/watch-later/${videoId}`);
@@ -34,9 +33,6 @@ const WatchLaterPage = () => {
       toast.error("Error removing video");
     }
   };
-
-
-
   useEffect(() => {
     fetchWatchLater();
   }, []);

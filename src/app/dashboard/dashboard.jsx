@@ -4,8 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Sun, Moon, Bell, LogOut, User, Settings, Plus, History, ThumbsUp } from "lucide-react";
+import { Sun, Moon, Bell, LogOut, User, Settings, Plus,} from "lucide-react";
 import Sidebar from "../components/sidebar/sidebar.jsx";
 import VideoCard from "../components/VideoCard/VideoCard.jsx";
 import LikedVideosPage from "../components/VideoCard/LikedVideosPage.jsx"
@@ -43,13 +42,11 @@ const Dashboard = () => {
         if (!token) {
           throw new Error("No authentication token found");
         }
-
         const { data: userResponse } = await API.get("/users/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
         if (!userResponse?.data) throw new Error("Invalid user data");
         const userInfo = userResponse.data;
 
@@ -78,11 +75,23 @@ const Dashboard = () => {
           likedVideos: likedRes.data.likedVideos || [],
           subscribers: subRes.data.data?.total || 0,
           status: statusRes.data.data || [],
-          dashboardVideos: Array.isArray(dashVidRes.data.data) ? dashVidRes.data.data : [],
+          dashboardVideos: dashVidRes.data.data || {},
           subscribedChannels: subscribedRes.data.data?.channels || [],
           playlistVideos: Array.isArray(playlistsRes.data?.data)
             ? playlistsRes.data.data.flatMap((p) => p.videos || [])
             : [],
+        });
+       
+        console.log("Dashboard Data:", {
+          user: userInfo,
+          recentPlaylists: playlistsRes.data.data,
+          videos: videoRes.data.data,
+          likedVideos: likedRes.data.likedVideos,
+          subscribers: subRes.data.data?.total,
+          status: statusRes.data.data,
+          dashboardVideos: dashVidRes.data.data,
+          subscribedChannels: subscribedRes.data.data?.channels,
+          playlistVideos: playlistsRes.data?.data.flatMap((p) => p.videos || []),
         });
       } catch (err) {
         console.error("Dashboard Error:", err);
@@ -96,6 +105,7 @@ const Dashboard = () => {
     };
     fetchData();
   }, []);
+
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -277,13 +287,13 @@ const Dashboard = () => {
   color="bg-green-100 dark:bg-green-900"
 />
 
-          {/* <DashboardCard
-            icon="📊"
-            title="Avg. Views"
-            value={avgViews || 0}
-            link="/analytics"
-            color="bg-purple-100 dark:bg-purple-900"
-          /> */}
+              <DashboardCard
+                icon="📊"
+                title="Total Views"
+                value={dashboardData.status.totalViews ?? 0}
+                link="/analytics"
+                color="bg-purple-100 dark:bg-purple-900"
+              />
           <DashboardCard
             icon="🔔"
             title="Subscriptions"
@@ -300,24 +310,24 @@ const Dashboard = () => {
               to="/videos"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Plus size={18} />
-              Upload New
+              
+              View All Videos
             </Link>
           </div>
           
-          {dashboardData.dashboardVideos.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {dashboardData.dashboardVideos.map((video) => (
-                <VideoCard key={video._id} video={video} />
-              ))}
-            </div>
-          ) : (
+{dashboardData.dashboardVideos?.videos?.length > 0 ? (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {dashboardData.dashboardVideos.videos.map((video) => (
+      <VideoCard key={video.videoId} video={video} />
+    ))}
+  </div>
+) : (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 You haven't uploaded any videos yet
               </p>
               <Link
-                to="/videos"
+                to="/playlists/create"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus size={18} className="mr-2" />

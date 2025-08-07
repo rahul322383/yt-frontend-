@@ -152,7 +152,6 @@ const HomePage = ({ initialView = "trending" }) => {
         
         const endpoint = view === "trending" ? "/videos/trending" : "/users/videos";
         const res = await API.get(endpoint, { headers });
-        console.log("Fetched videos:", res.data);
         
         if (res?.data?.success && Array.isArray(res.data.data)) {
           setVideos(res.data.data);
