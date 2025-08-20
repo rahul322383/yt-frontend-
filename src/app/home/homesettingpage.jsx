@@ -115,54 +115,63 @@ const SettingsPageHome = () => {
   };
 
   // Authentication verification
-  useEffect(() => {
-    const verifyAuth = async () => {
-      setUiState(prev => ({ ...prev, loading: true }));
-      
-      try {
-        if (!accessToken) throw new Error("No access token found");
+useEffect(() => {
+  const verifyAuth = async () => {
+    setUiState(prev => ({ ...prev, loading: true }));
 
-        API.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        const { data: user } = await API.get('/users/me');
-        
-        setFormData({
-          username: user.username || "",
-          email: user.email || "",
-          password: "",
-          theme: user.settings?.theme || "system",
-          notifications: user.settings?.notifications ?? true,
-          emailNotifications: user.settings?.emailNotifications ?? true,
-          pushNotifications: user.settings?.pushNotifications ?? true,
-          language: user.settings?.language || "en",
-          timezone: user.settings?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-          youtubeConnected: user.youtube?.connected || false,
-          youtubeChannel: user.youtube?.channel || null,
-          autoUpload: user.youtube?.autoUpload || false,
-          defaultVisibility: user.youtube?.defaultVisibility || "private",
-          uploadQuality: user.youtube?.uploadQuality || "hd1080",
-          twoFactorEnabled: user.settings?.twoFactorEnabled || false,
-          backupEmail: user.settings?.backupEmail || "",
-          dataExport: user.settings?.dataExport || false,
-          autoPlayVideos: user.settings?.autoPlayVideos ?? true,
-          videoQuality: user.settings?.videoQuality || "auto",
-          downloadQuality: user.settings?.downloadQuality || "hd",
-          darkModeSchedule: user.settings?.darkModeSchedule || "system",
-          darkModeStart: user.settings?.darkModeStart || "20:00",
-          darkModeEnd: user.settings?.darkModeEnd || "07:00"
-        });
+    try {
+      const token = localStorage.getItem("accessToken");
 
-        setUiState(prev => ({ ...prev, authChecked: true, loading: false }));
-
-      } catch (error) {
-        console.error("Authentication error:", error);
-        localStorage.removeItem('accessToken');
-        setAccessToken(null);
+      if (!token) {
+        console.warn("No access token found, redirecting...");
         setUiState(prev => ({ ...prev, loading: false }));
+        navigate("/login");   // redirect to login
+        return;
       }
-    };
 
-    verifyAuth();
-  }, [accessToken, navigate]);
+      API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const { data: user } = await API.get('/users/me');
+
+      setFormData({
+        username: user.username || "",
+        email: user.email || "",
+        password: "",
+        theme: user.settings?.theme || "system",
+        notifications: user.settings?.notifications ?? true,
+        emailNotifications: user.settings?.emailNotifications ?? true,
+        pushNotifications: user.settings?.pushNotifications ?? true,
+        language: user.settings?.language || "en",
+        timezone: user.settings?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        youtubeConnected: user.youtube?.connected || false,
+        youtubeChannel: user.youtube?.channel || null,
+        autoUpload: user.youtube?.autoUpload || false,
+        defaultVisibility: user.youtube?.defaultVisibility || "private",
+        uploadQuality: user.youtube?.uploadQuality || "hd1080",
+        twoFactorEnabled: user.settings?.twoFactorEnabled || false,
+        backupEmail: user.settings?.backupEmail || "",
+        dataExport: user.settings?.dataExport || false,
+        autoPlayVideos: user.settings?.autoPlayVideos ?? true,
+        videoQuality: user.settings?.videoQuality || "auto",
+        downloadQuality: user.settings?.downloadQuality || "hd",
+        darkModeSchedule: user.settings?.darkModeSchedule || "system",
+        darkModeStart: user.settings?.darkModeStart || "20:00",
+        darkModeEnd: user.settings?.darkModeEnd || "07:00"
+      });
+
+      setUiState(prev => ({ ...prev, authChecked: true, loading: false }));
+
+    } catch (error) {
+      console.error("Authentication error:", error);
+      localStorage.removeItem('accessToken');
+      setAccessToken(null);
+      setUiState(prev => ({ ...prev, loading: false }));
+      navigate("/login"); // fallback redirect
+    }
+  };
+
+  verifyAuth();
+}, [accessToken, navigate]);
+
 
   const connectYouTube = async () => {
     setUiState(prev => ({ ...prev, youtubeLoading: true }));

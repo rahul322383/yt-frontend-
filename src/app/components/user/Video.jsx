@@ -59,8 +59,7 @@ const VideoCard = ({
       <div className="relative w-full aspect-video bg-black">
         <video
           src={video.videoUrl}
-          className="absolute w-full h-full object-cover"
-          autoPlay={hover}
+          className="absolute w-full h-full"
           muted={muted}
           loop
           playsInline

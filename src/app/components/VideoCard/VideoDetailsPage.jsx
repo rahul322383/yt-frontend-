@@ -849,9 +849,9 @@ const VideoDetailPage = () => {
               {/* Comments Section */}
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold">
+                  {/* <h3 className="text-xl font-semibold">
                     Comments ({video.commentCount || 0})
-                  </h3>
+                  </h3> */}
                   <button
                     onClick={() => setShowComments(!showComments)}
                     className="text-yellow-500 hover:text-yellow-400 transition"

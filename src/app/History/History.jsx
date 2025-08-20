@@ -106,7 +106,7 @@ const HistoryPage = () => {
   }
 
   return (
-    <div className="flex">
+    <div className="flex-1 flex box-border bg-white dark:bg-gray-900 text-gray-800 dark:text-white ">
 
       {/* Main Content */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -157,10 +157,10 @@ const HistoryPage = () => {
     onMouseLeave={() => setHoveredVideo(null)}
   >
     {/* Thumbnail / Video Preview */}
-    <div className="relative pb-[100.25%] pt-[36.25%] overflow-hidden rounded-xl shadow-md">
+    <div className="relative pb-[30.25%] pt-[46.25%] hover:scale-105 transition-transform duration-200 pointer-cursor">
       <video
         src={video?.videoUrl}
-        className="absolute top-0 left-0 w-full h-full cursor-pointer object-cover"
+        className="absolute top-0 left-0 w-full h-full pointer-cursor"
         muted
         playsInline
         poster={video?.thumbnailUrl || "/default-thumbnail.png"}
@@ -174,7 +174,7 @@ const HistoryPage = () => {
     </div>
 
     {/* Video Info */}
-    <div className="mt-2 px-1">
+    <div className="mt-1 px-1">
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
           <h3
@@ -185,7 +185,7 @@ const HistoryPage = () => {
           </h3>
 
           {/* Owner Info */}
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-1 mt-1">
             <img
               src={video.owner?.avatar || "/default-avatar.png"}
               alt={video.owner?.username || "User"}
