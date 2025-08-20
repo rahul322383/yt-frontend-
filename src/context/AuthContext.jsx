@@ -1,5 +1,6 @@
+
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import Cookies from "js-cookie";
 import API from "../utils/axiosInstance.jsx";
 
@@ -12,29 +13,37 @@ export const AuthProvider = ({ children }) => {
     loading: true,
   });
 
-  const clearAuthData = () => {
-    Cookies.remove("accessToken");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userData");
-    setAuth({ user: null, isAuthenticated: false, loading: false });
-  };
-
-  const checkAuth = async () => {
+  // 🔹 Clear everything when unauthenticated
+  const clearAuthData = useCallback(() => {
     try {
-      const token = Cookies.get("accessToken") || localStorage.getItem("accessToken");
-     
+      Cookies.remove("accessToken");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userData");
+    } catch (e) {
+      console.warn("Failed to clear auth data:", e);
+    }
+    setAuth({ user: null, isAuthenticated: false, loading: false });
+  }, []);
+
+  // 🔹 Logout helper
+  const logout = useCallback(() => {
+    clearAuthData();
+  }, [clearAuthData]);
+
+  // 🔹 Check authentication on load
+  const checkAuth = useCallback(async () => {
+    try {
+      const token =
+        Cookies.get("accessToken") || localStorage.getItem("accessToken");
+
       if (!token) {
         clearAuthData();
         return;
       }
 
       const { data } = await API.get("/users/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-    
 
       if (data?.data) {
         setAuth({ user: data.data, isAuthenticated: true, loading: false });
@@ -46,17 +55,27 @@ export const AuthProvider = ({ children }) => {
       console.error("Auth check error:", err);
       clearAuthData();
     }
-  };
+  }, [clearAuthData]);
 
+  // 🔹 Run checkAuth on mount
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   return (
-    <AuthContext.Provider value={{ auth, setAuth, clearAuthData, checkAuth }}>
+    <AuthContext.Provider
+      value={{
+        auth,
+        setAuth,
+        clearAuthData,
+        checkAuth,
+        logout, // ✅ available everywhere
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
+// 🔹 Easy hook
 export const useAuth = () => useContext(AuthContext);

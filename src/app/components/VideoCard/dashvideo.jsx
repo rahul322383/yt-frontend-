@@ -1,3 +1,49 @@
+// import React from "react";
+// import { Heart } from "lucide-react";
+
+// const VideoLikeCard = ({ video }) => {
+//   if (!video) return null;
+
+//   const {
+//     _id,
+//     title,
+//     thumbnail,
+//     views,
+//     owner: { username, avatar },
+//   } = video;
+
+//   return (
+//     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
+//       <img
+//         src={thumbnail}
+//         alt={title}
+//         className="w-full h-48 object-cover"
+//       />
+//       <div className="p-4 flex flex-col gap-2">
+//         <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
+//         <div className="flex items-center gap-2">
+//           <img
+//             src={avatar}
+//             alt={username}
+//             className="w-8 h-8 rounded-full"
+//           />
+//           <span className="text-sm text-gray-600 dark:text-gray-300">{username}</span>
+//         </div>
+//         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+//           <span>{views} views</span>
+//           <div className="flex items-center gap-1">
+//             <Heart className="w-4 h-4 text-red-500" />
+//             <span>Liked</span>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default VideoLikeCard;
+
+
 // /* eslint-disable no-unused-vars */
 // "use client";
 
@@ -399,7 +445,7 @@ const formatDuration = (seconds) => {
   return `${m}:${sec < 10 ? "0" : ""}${sec}`;
 };
 
-const VideoCard = ({ video, onUpdated }) => {
+const DashboardVideoCard = ({ video, onUpdated }) => {
   const { auth } = useAuth();
   const videoRef = useRef(null);
   const navigate = useNavigate();
@@ -418,7 +464,7 @@ const VideoCard = ({ video, onUpdated }) => {
 
   const spritePerRow = 10;
   const spriteThumbWidth = 160;
-  const rawVideoId = video?.videoId || video?._id;
+  const rawVideoId =  video?._id;
   
   const isOwner = auth.isAuthenticated && (
     auth.user?._id === video?.owner?._id ||
@@ -580,7 +626,7 @@ const VideoCard = ({ video, onUpdated }) => {
           {video?.title || "Untitled Video"}
         </div>
         <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
-          {video?.creatorName || video?.owner?.username || "Unknown"} • {views} views 
+          {video?.creatorName || video?.owner?.username || "Unknown"} • {views} views
         </p>
 
         <div className="flex flex-wrap gap-2 hover:gap-3 cursor-pointer">
@@ -744,4 +790,4 @@ const VideoCard = ({ video, onUpdated }) => {
   );
 };
 
-export default VideoCard;
+export default DashboardVideoCard;

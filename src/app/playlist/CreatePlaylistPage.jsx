@@ -3,7 +3,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Trash2, Pencil, Loader2, Plus, ChevronRight, X, Video as VideoIcon } from "lucide-react";
+import { Trash2, Pencil, Loader2, Plus,Edit, ChevronRight, X, Video as VideoIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import CountUp from "react-countup";
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
+  CardDescription,
   CardFooter,
 } from "../components/ui/card.jsx";
 import { Button } from "../components/ui/button.jsx";
@@ -35,6 +36,7 @@ const CreatePlaylistPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [availableVideos, setAvailableVideos] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchPlaylists = async () => {
     try {
@@ -229,6 +231,23 @@ const CreatePlaylistPage = () => {
           >
             <Plus size={18} />
             Create Playlist
+          </Button>
+         
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Button 
+            onClick={() => {
+              resetForm();
+              setShowEditModal(true);
+            }}
+            className="flex items-center gap-2 w-full md:w-auto"
+            aria-label="Edit playlist"
+          >
+            <Edit size={18} />
+            Edit Playlist
           </Button>
         </motion.div>
       </div>

@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { Sun, Moon, Bell, LogOut, User, Settings, Plus,} from "lucide-react";
 import Sidebar from "../components/sidebar/sidebar.jsx";
-import VideoCard from "../components/VideoCard/VideoCard.jsx";
+import DashboardVideoCard from "../components/VideoCard/dashvideo.jsx";
 import LikedVideosPage from "../components/VideoCard/LikedVideosPage.jsx"
 import API from "../../utils/axiosInstance.jsx";
 import "../../index.css";
@@ -81,18 +81,6 @@ const Dashboard = () => {
             ? playlistsRes.data.data.flatMap((p) => p.videos || [])
             : [],
         });
-       
-        console.log("Dashboard Data:", {
-          user: userInfo,
-          recentPlaylists: playlistsRes.data.data,
-          videos: videoRes.data.data,
-          likedVideos: likedRes.data.likedVideos,
-          subscribers: subRes.data.data?.total,
-          status: statusRes.data.data,
-          dashboardVideos: dashVidRes.data.data,
-          subscribedChannels: subscribedRes.data.data?.channels,
-          playlistVideos: playlistsRes.data?.data.flatMap((p) => p.videos || []),
-        });
       } catch (err) {
         console.error("Dashboard Error:", err);
         setError("Failed to load dashboard data.");
@@ -164,14 +152,14 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <Sidebar
+      {/* <Sidebar
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         user={dashboardData.user}
         isMenuOpen={isMenuOpen}
         toggleMenu={() => setMenuOpen(!isMenuOpen)}
         handleLogout={handleLogout}
-      />
+      /> */}
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <header className="flex justify-between items-center mb-8">
@@ -316,9 +304,11 @@ const Dashboard = () => {
           </div>
           
 {dashboardData.dashboardVideos?.videos?.length > 0 ? (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
     {dashboardData.dashboardVideos.videos.map((video) => (
-      <VideoCard key={video.videoId} video={video} />
+      <div key={video.videoId}>
+        <DashboardVideoCard video={video} />
+      </div>
     ))}
   </div>
 ) : (

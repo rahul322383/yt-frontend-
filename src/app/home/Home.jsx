@@ -7,8 +7,6 @@ import { toast } from "react-hot-toast";
 import { 
   FaBars, 
   FaBell, 
-  FaSearch, 
-  FaPlus, 
   FaMoon, 
   FaSun,
   FaHome,
@@ -19,7 +17,6 @@ import {
   FaThumbsUp,
   FaBookmark,
   FaChartBar,
-  FaUser,
   FaCog,
   FaSignOutAlt,
   FaSignInAlt,
@@ -87,19 +84,19 @@ const VideoCard = ({ video }) => {
 };
 
 // Sidebar Navigation Item Component
-const SidebarItem = ({ to, icon: Icon, label, isActive }) => (
-  <Link
-    to={to}
-    className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
-      isActive
-        ? "bg-gray-200 dark:bg-gray-700 font-medium"
-        : "hover:bg-gray-100 dark:hover:bg-gray-800"
-    }`}
-  >
-    <Icon className="text-lg" />
-    <span>{label}</span>
-  </Link>
-);
+// const SidebarItem = ({ to, icon: Icon, label, isActive }) => (
+//   <Link
+//     to={to}
+//     className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+//       isActive
+//         ? "bg-gray-200 dark:bg-gray-700 font-medium"
+//         : "hover:bg-gray-100 dark:hover:bg-gray-800"
+//     }`}
+//   >
+//     <Icon className="text-lg" />
+//     <span>{label}</span>
+//   </Link>
+// );
 
 // Main Home Page Component
 const HomePage = ({ initialView = "trending" }) => {
@@ -264,11 +261,11 @@ const filteredVideos = useMemo(() => {
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white flex flex-col">
       {/* Header */}
       <header className="flex justify-between items-center bg-white dark:bg-gray-800 shadow px-4 py-2 sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <FaBars
+        <div className="flex items-center gap-2">
+          {/* <FaBars
             className="text-2xl cursor-pointer text-gray-700 dark:text-white"
             onClick={toggleSidebar}
-          />
+          /> */}
           <Link to="/" className="text-xl font-bold flex items-center gap-2">
             <span className="text-blue-600">My</span>VideoApp
           </Link>
@@ -362,7 +359,7 @@ const filteredVideos = useMemo(() => {
 
       {/* Main Layout */}
       <div className="flex flex-grow">
-        {/* Sidebar */}
+        {/* Sidebar
         {isSidebarOpen && (
           <aside className="w-64 bg-white dark:bg-gray-800 p-4 flex-shrink-0 border-r border-gray-200 dark:border-gray-700">
             <div className="space-y-1">
@@ -457,9 +454,9 @@ const filteredVideos = useMemo(() => {
                   isActive={isActive("/settings")} 
                 />
               </div>
-            </div>
-          </aside>
-        )}
+            </div> */}
+          {/* </aside> */}
+        {/* )} */}
 
         {/* Main Content */}
         <main className="flex-grow bg-gray-50 dark:bg-gray-900 p-6">

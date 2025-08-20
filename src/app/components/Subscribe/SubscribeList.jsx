@@ -73,6 +73,7 @@ const SubscribersList = () => {
                 >
                   {subscriber?.username || "Unknown User"}
                 </Link>
+            
                 <span className="text-xs text-gray-500">
                   Subscribed {formatDistanceToNow(new Date(subscribedAt), { addSuffix: true })}
                 </span>

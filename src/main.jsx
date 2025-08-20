@@ -5,12 +5,14 @@ import "./index.css";
 import { AuthProvider } from "./context/AuthContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "./app/themecontext/themecontext";
+import Sidebar from "./app/components/sidebar/sidebar.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ThemeProvider> 
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <AuthProvider> 
+      <AuthProvider>
+        {/* <Sidebar /> */}
         <App />
       </AuthProvider>
     </GoogleOAuthProvider>
