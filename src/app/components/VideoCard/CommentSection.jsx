@@ -27,6 +27,8 @@ export default function CommentSection({ videoId }) {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [processing, setProcessing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
 
   const { auth } = useAuth();
   const token = auth.token;
@@ -44,21 +46,49 @@ export default function CommentSection({ videoId }) {
     if (videoId) fetchComments(page);
   }, [videoId, page]);
 
+  // const fetchComments = async (pageNumber = 1) => {
+  //   setLoading(true);
+  //   try {
+  //     const res = await API.get(
+  //       `/users/comments/${videoId}?page=${pageNumber}&limit=10`
+  //     );
+  //     setComments(res?.data?.data?.comments || []);
+  //     setTotalPages(res?.data?.data?.totalPages || 1);
+  //   } catch (error) {
+  //     console.error("Failed to fetch comments", error);
+  //     toast.error(error.response?.data?.message || "Failed to fetch comments");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchComments = async (pageNumber = 1) => {
-    setLoading(true);
-    try {
-      const res = await API.get(
-        `/users/comments/${videoId}?page=${pageNumber}&limit=10`
-      );
-      setComments(res?.data?.data?.comments || []);
-      setTotalPages(res?.data?.data?.totalPages || 1);
-    } catch (error) {
-      console.error("Failed to fetch comments", error);
-      toast.error(error.response?.data?.message || "Failed to fetch comments");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    const res = await API.get(
+      `/users/comments/${videoId}?page=${pageNumber}&limit=10`
+    );
+    let commentsData = res?.data?.data?.comments || [];
+
+    // normalize replies to always have ownerDetails
+    const normalizeReplies = (list) =>
+      list.map(c => ({
+        ...c,
+        ownerDetails: c.ownerDetails || c.replyOwnerDetails, // fallback
+        replies: normalizeReplies(c.replies || []),
+      }));
+
+    commentsData = normalizeReplies(commentsData);
+
+    setComments(commentsData);
+    setTotalPages(res?.data?.data?.totalPages || 1);
+  } catch (error) {
+    console.error("Failed to fetch comments", error);
+    toast.error(error.response?.data?.message || "Failed to fetch comments");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const onSubmit = async (data) => {
     const content = data.content?.trim();
@@ -84,37 +114,78 @@ export default function CommentSection({ videoId }) {
     }
   };
 
+  // const handleReply = async (parentId) => {
+  //   const replyContent = replyMap[parentId]?.trim();
+  //   if (!auth.isAuthenticated) return toast.error("Please login to reply");
+  //   if (!replyContent) return toast.error("Reply cannot be empty");
+
+  //   try {
+  //     setProcessing(true);
+  //     const res = await API.post(
+  //       `/users/comments/${parentId}/reply`,
+  //       { content: replyContent, video: videoId },
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     const newReply = res?.data?.data;
+  //     const updateReplies = (list) =>
+  //       list.map(comment => {
+  //         if (comment._id === parentId) {
+  //           return { ...comment, replies: [...(comment.replies || []), newReply] };
+  //         }
+  //         return { ...comment, replies: updateReplies(comment.replies || []) };
+  //       });
+
+  //     setComments(prev => updateReplies(prev));
+  //     toast.success("Reply added");
+  //   } catch (error) {
+  //     console.error("Failed to add reply", error);
+  //     toast.error(error.response?.data?.message || "Failed to add reply");
+  //   } finally {
+  //     setReplyMap(prev => ({ ...prev, [parentId]: "" }));
+  //     setProcessing(false);
+  //   }
+  // };
+
+
   const handleReply = async (parentId) => {
-    const replyContent = replyMap[parentId]?.trim();
-    if (!auth.isAuthenticated) return toast.error("Please login to reply");
-    if (!replyContent) return toast.error("Reply cannot be empty");
+  const replyContent = replyMap[parentId]?.trim();
+  if (!auth.isAuthenticated) return toast.error("Please login to reply");
+  if (!replyContent) return toast.error("Reply cannot be empty");
 
-    try {
-      setProcessing(true);
-      const res = await API.post(
-        `/users/comments/${parentId}/reply`,
-        { content: replyContent, video: videoId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const newReply = res?.data?.data;
-      const updateReplies = (list) =>
-        list.map(comment => {
-          if (comment._id === parentId) {
-            return { ...comment, replies: [...(comment.replies || []), newReply] };
-          }
-          return { ...comment, replies: updateReplies(comment.replies || []) };
-        });
+  try {
+    setProcessing(true);
+    const res = await API.post(
+      `/users/comments/${parentId}/reply`,
+      { content: replyContent, video: videoId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setComments(prev => updateReplies(prev));
-      toast.success("Reply added");
-    } catch (error) {
-      console.error("Failed to add reply", error);
-      toast.error(error.response?.data?.message || "Failed to add reply");
-    } finally {
-      setReplyMap(prev => ({ ...prev, [parentId]: "" }));
-      setProcessing(false);
-    }
-  };
+    let newReply = res?.data?.data;
+    // normalize new reply
+    newReply = {
+      ...newReply,
+      ownerDetails: newReply.ownerDetails || newReply.replyOwnerDetails,
+    };
+
+    const updateReplies = (list) =>
+      list.map(comment => {
+        if (comment._id === parentId) {
+          return { ...comment, replies: [...(comment.replies || []), newReply] };
+        }
+        return { ...comment, replies: updateReplies(comment.replies || []) };
+      });
+
+    setComments(prev => updateReplies(prev));
+    toast.success("Reply added");
+  } catch (error) {
+    console.error("Failed to add reply", error);
+    toast.error(error.response?.data?.message || "Failed to add reply");
+  } finally {
+    setReplyMap(prev => ({ ...prev, [parentId]: "" }));
+    setProcessing(false);
+  }
+};
+
 
   const handleLike = async (commentId) => {
     if (!auth.isAuthenticated) return toast.error("Please login to like comments");
@@ -205,56 +276,103 @@ export default function CommentSection({ videoId }) {
     }
   };
 
-  const handleUpdate = async (commentId, oldContent) => {
-    if (!auth.isAuthenticated) {
-      toast.error("Please login to edit comments");
-      return;
-    }
+//  const handleUpdate = async (commentId, oldContent) => {
+//   if (!auth.isAuthenticated) {
+//     toast.error("Please login to edit comments");
+//     return;
+//   }
 
-    const newContent = prompt("Edit your comment:", oldContent)?.trim();
-    if (!newContent || newContent === oldContent) return;
+//   const newContent = prompt("Edit your comment:", oldContent)?.trim();
+//   if (!newContent || newContent === oldContent) return;
 
-    try {
-      setProcessing(true);
-      const commentToUpdate = findCommentById(comments, commentId);
-      if (!commentToUpdate) {
-        toast.error("Comment not found");
-        return;
-      }
+//   try {
+//     setProcessing(true);
+//     const commentToUpdate = findCommentById(comments, commentId);
+//     if (!commentToUpdate) {
+//       toast.error("Comment not found");
+//       return;
+//     }
 
-      if (commentToUpdate.ownerDetails._id !== auth.user?._id) {
-        toast.error("You can only edit your own comments");
-        return;
-      }
+//     if (commentToUpdate.ownerDetails?._id !== auth.user?._id) {
+//       toast.error("You can only edit your own comments");
+//       return;
+//     }
 
-      await API.patch(
-        `/users/comments/${commentId}`,
-        { content: newContent },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+//     const res = await API.patch(
+//       `/users/comments/${commentId}`,
+//       { content: newContent },
+//       { headers: { Authorization: `Bearer ${token}` } }
+//     );
 
-const updateContent = (list) =>
-  list.map(comment => {
-    if (comment._id === commentId) {
-      return { ...comment, content: newContent };
-    }
-    if (comment.replies?.length) {
-      return { ...comment, replies: updateContent(comment.replies) };
-    }
-    return comment;
-  });
+//     let updatedComment = res?.data?.data;
+//     // normalize in case backend sends replyOwnerDetails
+//     updatedComment = {
+//       ...updatedComment,
+//       ownerDetails: updatedComment.ownerDetails || updatedComment.replyOwnerDetails,
+//     };
 
+//     const updateContent = (list) =>
+//       list.map(comment => {
+//         if (comment._id === commentId) {
+//           return { ...comment, content: newContent, ownerDetails: updatedComment.ownerDetails };
+//         }
+//         if (comment.replies?.length) {
+//           return { ...comment, replies: updateContent(comment.replies) };
+//         }
+//         return comment;
+//       });
 
-      setComments(prev => updateContent(prev));
-      toast.success("Comment updated");
-    } catch (error) {
-      console.error("Update error:", error);
-      toast.error(error.response?.data?.message || "Failed to update comment");
-      fetchComments(page);
-    } finally {
-      setProcessing(false);
-    }
-  };
+//     setComments(prev => updateContent(prev));
+//     toast.success("Comment updated");
+//   } catch (error) {
+//     console.error("Update error:", error);
+//     toast.error(error.response?.data?.message || "Failed to update comment");
+//     fetchComments(page);
+//   } finally {
+//     setProcessing(false);
+//   }
+// };
+
+ const handleUpdate = async (commentId, newContent) => {
+  if (!auth.isAuthenticated) {
+    toast.error("Please login to edit comments");
+    return;
+  }
+
+  if (!newContent?.trim()) return;
+
+  try {
+    setProcessing(true);
+    const res = await API.patch(
+      `/users/comments/${commentId}`,
+      { content: newContent.trim() },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    let updatedComment = res?.data?.data;
+    updatedComment = {
+      ...updatedComment,
+      ownerDetails: updatedComment.ownerDetails || updatedComment.replyOwnerDetails,
+    };
+
+    const updateContent = (list) =>
+      list.map((comment) => {
+        if (comment._id === commentId) {
+          return { ...comment, content: newContent, ownerDetails: updatedComment.ownerDetails };
+        }
+        return { ...comment, replies: updateContent(comment.replies || []) };
+      });
+
+    setComments((prev) => updateContent(prev));
+    toast.success("Comment updated");
+  } catch (error) {
+    console.error("Update error:", error);
+    toast.error(error.response?.data?.message || "Failed to update comment");
+    fetchComments(page);
+  } finally {
+    setProcessing(false);
+  }
+};
 
   const toggleMenu = (id) => {
     setOpenMenuId(openMenuId === id ? null : id);
@@ -421,6 +539,10 @@ function CommentCard({
   const replyInputRef = useRef(null);
   const showReplies = expandedReplies[comment._id] ?? true;
   const isOwner = currentUser?._id === comment.ownerDetails?._id;
+  const [isEditing, setIsEditing] = useState(false);
+ const [editContent, setEditContent] = useState(comment.content);
+
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -479,15 +601,16 @@ function CommentCard({
                     {isOwner && (
                       <>
                         <button
-                          onClick={() => {
-                            toggleMenu(null);
-                            handleUpdate(comment._id, comment.content);
-                          }}
-                          className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          disabled={processing}
-                        >
-                          <FiEdit2 className="mr-2" /> Edit
-                        </button>
+  onClick={() => {
+    toggleMenu(null);
+    setIsEditing(true);
+  }}
+  className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+  disabled={processing}
+>
+  <FiEdit2 className="mr-2" /> Edit
+</button>
+
                         <button
                           onClick={() => {
                             toggleMenu(null);
@@ -527,9 +650,42 @@ function CommentCard({
             </div>
           </div>
 
-          <p className="text-gray-700 whitespace-pre-wrap break-words mb-3">
-            {comment.content}
-          </p>
+         {isEditing ? (
+  <div className="flex flex-col gap-2 mb-3">
+    <textarea
+      value={editContent}
+      onChange={(e) => setEditContent(e.target.value)}
+      className="w-full px-3 py-2 border rounded-lg text-sm text-black"
+      rows="2"
+    />
+    <div className="flex gap-2">
+      <button
+        onClick={() => {
+          handleUpdate(comment._id, editContent);
+          setIsEditing(false);
+        }}
+        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+        disabled={processing}
+      >
+        Save
+      </button>
+      <button
+        onClick={() => {
+          setIsEditing(false);
+          setEditContent(comment.content); // reset
+        }}
+        className="px-3 py-1 bg-gray-300 text-sm rounded-lg hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+) : (
+  <p className="text-gray-700 whitespace-pre-wrap break-words mb-3">
+    {comment.content}
+  </p>
+)}
+
 
           <div className="flex items-center gap-4">
             <button

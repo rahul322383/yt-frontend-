@@ -43,7 +43,7 @@ const HistoryPage = () => {
 
   // Clear all history
   const handleClearAll = async () => {
-    if (!confirm("Clear all watch history?")) return;
+   
     try {
       await API.delete("/users/clear-watch-history", {
         headers: { Authorization: `Bearer ${token}` },

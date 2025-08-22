@@ -1,11 +1,11 @@
 /* eslint-disable no-unused-vars */
 
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import API from "../../utils/axiosInstance.jsx";
+import API from "../../utils/axiosInstance";
 import { 
   UserIcon,
   EyeIcon,
@@ -99,7 +99,7 @@ const SettingsPageHome = () => {
   const navigate = useNavigate();
 
   // Calculate password strength
-  const calculatePasswordStrength = (password) => {
+  const calculatePasswordStrength = useCallback((password) => {
     if (!password) return 0;
     
     let strength = 0;
@@ -112,11 +112,10 @@ const SettingsPageHome = () => {
     if (/[^A-Za-z0-9]/.test(password)) strength += 1;
     
     return Math.min(strength, 5);
-  };
+  }, []);
 
   // Authentication verification
-useEffect(() => {
-  const verifyAuth = async () => {
+  const verifyAuth = useCallback(async () => {
     setUiState(prev => ({ ...prev, loading: true }));
 
     try {
@@ -125,7 +124,7 @@ useEffect(() => {
       if (!token) {
         console.warn("No access token found, redirecting...");
         setUiState(prev => ({ ...prev, loading: false }));
-        navigate("/login");   // redirect to login
+        navigate("/login");
         return;
       }
 
@@ -165,13 +164,13 @@ useEffect(() => {
       localStorage.removeItem('accessToken');
       setAccessToken(null);
       setUiState(prev => ({ ...prev, loading: false }));
-      navigate("/login"); // fallback redirect
+      navigate("/login");
     }
-  };
+  }, [navigate]);
 
-  verifyAuth();
-}, [accessToken, navigate]);
-
+  useEffect(() => {
+    verifyAuth();
+  }, [verifyAuth]);
 
   const connectYouTube = async () => {
     setUiState(prev => ({ ...prev, youtubeLoading: true }));
@@ -180,6 +179,12 @@ useEffect(() => {
       
       // Open popup window for OAuth flow
       const popup = window.open(authUrl, 'youtube_oauth', 'width=600,height=700,top=100,left=100');
+      
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        toast.error("Please allow popups for YouTube authentication");
+        setUiState(prev => ({ ...prev, youtubeLoading: false }));
+        return;
+      }
       
       // Polling to check if window closed
       const checkPopup = setInterval(() => {
@@ -269,8 +274,7 @@ useEffect(() => {
         ...prev,
         showTwoFactorSetup: true,
         twoFactorSecret: data.secret,
-        twoFactorCode: "",
-        secret: uiState.twoFactorSecret,
+        twoFactorCode: ""
       }));
     } catch (error) {
       toast.error("Failed to setup two-factor authentication");
@@ -283,7 +287,6 @@ useEffect(() => {
       await API.post('/users/verify-2fa', {
         code: uiState.twoFactorCode,
         secret: uiState.twoFactorSecret
-        
       });
       
       setFormData(prev => ({ ...prev, twoFactorEnabled: true }));
@@ -437,7 +440,7 @@ useEffect(() => {
           {[...Array(5)].map((_, i) => (
             <div 
               key={i} 
-              className={`flex-1 rounded-full ${i < strength ? strengthColors[strength] : 'bg-gray-200 dark:bg-gray-700'}`}
+              className={`flex-1 rounded-full ${i < strength ? strengthColors[i] : 'bg-gray-200 dark:bg-gray-700'}`}
             />
           ))}
         </div>
@@ -728,11 +731,9 @@ useEffect(() => {
                     </p>
                   </div>
                   <Switch
-                    id="notifications"
-                    name="notifications"
                     checked={formData.notifications}
-                    onChange={handleInputChange}
-                    className={`${formData.notifications ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+                    onChange={(value) => handleInputChange({ name: "notifications", target: { value } })}
+                    className={`${formData.notifications ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                   >
                     <span
                       className={`${formData.notifications ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition`}
@@ -752,11 +753,9 @@ useEffect(() => {
                         </p>
                       </div>
                       <Switch
-                        id="emailNotifications"
-                        name="emailNotifications"
                         checked={formData.emailNotifications}
-                        onChange={handleInputChange}
-                        className={`${formData.emailNotifications ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+                        onChange={(value) => handleInputChange({ name: "emailNotifications", target: { value } })}
+                        className={`${formData.emailNotifications ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                       >
                         <span
                           className={`${formData.emailNotifications ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition`}
@@ -774,11 +773,9 @@ useEffect(() => {
                         </p>
                       </div>
                       <Switch
-                        id="pushNotifications"
-                        name="pushNotifications"
                         checked={formData.pushNotifications}
-                        onChange={handleInputChange}
-                        className={`${formData.pushNotifications ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+                        onChange={(value) => handleInputChange({ name: "pushNotifications", target: { value } })}
+                        className={`${formData.pushNotifications ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                       >
                         <span
                           className={`${formData.pushNotifications ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition`}
@@ -831,11 +828,9 @@ useEffect(() => {
                           </p>
                         </div>
                         <Switch
-                          id="autoUpload"
-                          name="autoUpload"
                           checked={formData.autoUpload}
-                          onChange={handleInputChange}
-                          className={`${formData.autoUpload ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full`}
+                          onChange={(value) => handleInputChange({ name: "autoUpload", target: { value } })}
+                          className={`${formData.autoUpload ? 'bg-blue-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                         >
                           <span
                             className={`${formData.autoUpload ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition`}
@@ -1240,7 +1235,5 @@ useEffect(() => {
     </div>
   );
 };
-
-
 
 export default SettingsPageHome;

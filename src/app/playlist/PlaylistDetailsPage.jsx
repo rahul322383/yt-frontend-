@@ -1,3 +1,726 @@
+// // // /* eslint-disable no-unused-vars */
+// // // "use client";
+// // // import React, { useEffect, useState, useCallback } from "react";
+// // // import { useParams, useNavigate, Link } from "react-router-dom";
+// // // import { XCircle, Clock } from "lucide-react";
+// // // import VideoUpload from "../components/VideoCard/UploadCard.jsx";
+// // // import toast from "react-hot-toast";
+// // // import axios from "axios";
+// // // import API from "../../utils/axiosInstance.jsx";
+// // // import PlaylistVideoManager from "./PlaylistVideoManager.jsx";
+
+// // // const VideoPlayerModal = ({ videoUrl, isOpen, onClose }) => {
+// // //   if (!isOpen) return null;
+// // //   return (
+// // //     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+// // //       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 max-w-2xl w-full relative">
+// // //         <button
+// // //           onClick={onClose}
+// // //           className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+// // //         >
+// // //           <XCircle className="w-6 h-6" />
+// // //         </button>
+// // //         <video src={videoUrl} controls autoPlay className="w-full rounded" />
+// // //       </div>
+// // //     </div>
+// // //   );
+// // // };
+
+// // // const PlaylistDetailsPage = () => {
+// // //   const { id } = useParams();
+// // //   const navigate = useNavigate();
+
+// // //   const [playlist, setPlaylist] = useState(null);
+// // //   const [loading, setLoading] = useState(true);
+// // //   const [isEditMode, setIsEditMode] = useState(false);
+// // //   const [formData, setFormData] = useState({ name: "", description: "" });
+// // //   const [uploadData, setUploadData] = useState({ title: "", videoRef: "", videoFile: null });
+// // //   const [uploading, setUploading] = useState(false);
+// // //   const [uploadProgress, setUploadProgress] = useState(0);
+// // //   const [cancelTokenSource, setCancelTokenSource] = useState(null);
+// // //   const [videoUrl, setVideoUrl] = useState("");
+// // //   const [isModalOpen, setIsModalOpen] = useState(false);
+
+// // //   // Check authentication status
+// // //   const checkAuth = useCallback(() => {
+// // //     const token = localStorage.getItem('accessToken');
+
+// // //     if (!token) {
+// // //       navigate('/login');
+// // //       toast.error('Please login to access this page');
+// // //     }
+// // //   }, [navigate]);
+
+// // //   const fetchPlaylist = useCallback(async () => {
+// // //     try {
+// // //       setLoading(true);
+// // //       const token = localStorage.getItem('accessToken');
+// // //       if (!token) {
+// // //         checkAuth();
+// // //         return;
+// // //       }
+// // //       const res = await API.get(`/users/playlist/${id}`, {
+// // //         headers: {
+// // //           Authorization: `Bearer ${token}`
+// // //         }
+// // //       });
+// // //       setPlaylist(res.data.data);
+// // //       setFormData({
+// // //         name: res.data.data.name || "",
+// // //         description: res.data.data.description || "",
+// // //       });
+// // //     } catch (err) {
+// // //       console.error(err);
+// // //       if (err.response?.status === 401) {
+// // //         localStorage.removeItem('accesstoken');
+// // //         checkAuth();
+// // //       } else {
+// // //         toast.error("Could not load playlist.");
+// // //         navigate("/playlists");
+// // //       }
+// // //     } finally {
+// // //       setLoading(false);
+// // //     }
+// // //   }, [id, navigate, checkAuth]);
+
+// // //   useEffect(() => {
+// // //     checkAuth(); // Check auth on initial load
+// // //     fetchPlaylist();
+// // //     if (!id) {
+// // //       toast.error("Invalid playlist ID");
+// // //       navigate("/playlists");
+// // //       return;
+// // //     }
+// // //     fetchPlaylist();
+// // //   }, [id, fetchPlaylist, checkAuth, navigate]);
+
+// // //   // Add token to all API requests
+// // //   const apiWithAuth = {
+// // //     get: async (url) => {
+// // //       const token = localStorage.getItem('accessToken');
+
+// // //       return API.get(url, {
+// // //         headers: {
+// // //           Authorization: `Bearer ${token}`
+// // //         }
+// // //       });
+// // //     },
+// // //     post: async (url, data) => {
+// // //       const token = localStorage.getItem('accessToken');
+// // // ;
+// // //       return api.post(url, data, {
+// // //         headers: {
+// // //           Authorization: `Bearer ${token}`
+// // //         }
+// // //       });
+// // //     },
+// // //     put: async (url, data) => {
+// // //      const token = localStorage.getItem('accessToken');
+
+// // //       return API.put(url, data, {
+// // //         headers: {
+// // //           Authorization: `Bearer ${token}`
+// // //         }
+// // //       });
+// // //     }
+// // //   };
+
+// // //   const handleUpdatePlaylist = async (e) => {
+// // //     e.preventDefault();
+// // //     try {
+// // //       await apiWithAuth.put(`/users/playlist/${id}`, formData);
+// // //       toast.success("Playlist updated!");
+// // //       setIsEditMode(false);
+// // //       fetchPlaylist();
+// // //     } catch (error) {
+// // //       if (error.response?.status === 401) {
+// // //         localStorage.removeItem('accessToken');
+// // //         checkAuth();
+// // //       } else {
+// // //         toast.error("Failed to update playlist.");
+// // //       }
+// // //     }
+// // //   };
+
+// // //   const handlePlayVideo = async (videoId) => {
+// // //     try {
+// // //       const res = await apiWithAuth.get(`/user/playlist/videos/${videoId}`);
+// // //       const url = res.data?.data?.url;
+// // //       if (url) {
+// // //         setVideoUrl(url);
+// // //         setIsModalOpen(true);
+// // //       } else {
+// // //         toast.error("Video URL not found");
+// // //       }
+// // //     } catch (err) {
+// // //       if (err.response?.status === 401) {
+// // //         localStorage.removeItem('accessToken');
+// // //         checkAuth();
+// // //       } else {
+// // //         toast.error("Failed to load video");
+// // //       }
+// // //     }
+// // //   };
+
+// // //   const handleUploadChange = (e) => {
+// // //     setUploadData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+// // //   };
+
+// // //   const handleVideoFileChange = (e) => {
+// // //     const file = e.target.files[0];
+// // //     setUploadData((prev) => ({ ...prev, videoFile: file }));
+// // //   };
+
+// // //   const cancelUpload = () => {
+// // //     if (cancelTokenSource) {
+// // //       cancelTokenSource.cancel("Upload canceled by user.");
+// // //       toast("Upload canceled.");
+// // //     }
+// // //     setUploading(false);
+// // //     setUploadProgress(0);
+// // //   };
+
+// // //   const handleUploadVideo = async (e) => {
+// // //     e.preventDefault();
+// // //     const { title, videoRef, videoFile } = uploadData;
+// // //     if (!title || !videoFile) return toast.error("Please fill all fields");
+
+// // //     const token = localStorage.getItem('accessToken');
+
+// // //     if (!token) {
+// // //       checkAuth();
+// // //       return;
+// // //     }
+
+// // //     const form = new FormData();
+// // //     form.append("title", title);
+// // //     form.append("video", videoFile);
+// // //     if (videoRef) form.append("videoRef", videoRef);
+
+// // //     const source = axios.CancelToken.source();
+// // //     setCancelTokenSource(source);
+// // //     setUploading(true);
+// // //     setUploadProgress(0);
+
+// // //     try {
+// // //       const response = await api.post(`/users/playlist/${id}/videos`, form, {
+// // //         headers: { 
+// // //           "Content-Type": "multipart/form-data",
+// // //           Authorization: `Bearer ${token}`
+// // //         },
+// // //         cancelToken: source.token,
+// // //         onUploadProgress: (e) => {
+// // //           const percent = Math.round((e.loaded * 100) / e.total);
+// // //           setUploadProgress(percent);
+// // //         },
+// // //       });
+
+// // //       toast.success("Video added!");
+// // //       fetchPlaylist();
+// // //       setUploadData({ title: "", videoFile: null, videoRef: "" });
+// // //     } catch (err) {
+// // //       if (axios.isCancel(err)) {
+// // //         toast.info("Video upload was canceled.");
+// // //       } else if (err.response?.status === 401) {
+// // //         localStorage.removeItem('token');
+// // //         checkAuth();
+// // //       } else {
+// // //         toast.error(err?.response?.data?.message || "Upload failed");
+// // //       }
+// // //     } finally {
+// // //       setUploading(false);
+// // //       setUploadProgress(0);
+// // //     }
+// // //   };
+
+// // //   if (loading) {
+// // //     return (
+// // //       <div className="flex justify-center items-center h-screen">
+// // //         <span className="text-lg text-gray-500">Loading...</span>
+// // //       </div>
+// // //     );
+// // //   }
+
+// // //   return (
+// // //     <div className="p-6 sm:p-8 max-w-6xl mx-auto">
+// // //       <VideoPlayerModal videoUrl={videoUrl} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+// // //       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+// // //         {isEditMode ? (
+// // //           <input
+// // //             type="text"
+// // //             value={formData.name}
+// // //             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+// // //             className="text-3xl sm:text-4xl font-bold px-4 py-3 border-2 border-blue-500 rounded-lg w-full dark:bg-gray-800 dark:text-white"
+// // //           />
+// // //         ) : (
+// // //           <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">
+// // //             {playlist?.name}
+// // //           </h1>
+// // //         )}
+// // //         <div className="flex flex-wrap gap-3 w-full md:w-auto">
+// // //           <Link
+// // //             to="/history"
+// // //             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-700 dark:hover:bg-blue-800"
+// // //           >
+// // //             <Clock className="w-4 h-4" />
+// // //             <span className="hidden sm:inline">View History</span>
+// // //           </Link>
+// // //           <button 
+// // //             onClick={() => navigate("/AnalyticsSection")}
+// // //             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-600"
+// // //           >
+// // //             <span className="hidden sm:inline">View Analytics</span>
+// // //           </button>
+// // //         </div>
+// // //       </div>
+
+// // //       <div className="mb-10">
+// // //         <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-300 mb-2">
+// // //           Description
+// // //         </h3>
+// // //         {isEditMode ? (
+// // //           <textarea
+// // //             value={formData.description}
+// // //             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+// // //             className="w-full p-4 border-2 border-blue-500 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
+// // //             rows={4}
+// // //           />
+// // //         ) : (
+// // //           <p className="text-gray-600 dark:text-gray-400">{playlist?.description}</p>
+// // //         )}
+// // //       </div>
+
+// // //       <div className="flex flex-wrap gap-4 mb-12">
+// // //         <button
+// // //           onClick={() => setIsEditMode((prev) => !prev)}
+// // //           className="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
+// // //         >
+// // //           {isEditMode ? "Cancel" : "Edit Playlist"}
+// // //         </button>
+// // //         {isEditMode && (
+// // //           <button
+// // //             onClick={handleUpdatePlaylist}
+// // //             className="px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all"
+// // //           >
+// // //             Save Changes
+// // //           </button>
+// // //         )}
+// // //       </div>
+
+// // //       <form onSubmit={handleUploadVideo} className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-12">
+// // //         <h3 className="text-xl font-semibold mb-5 text-gray-700 dark:text-white">
+// // //           Upload New Video
+// // //         </h3>
+// // //         <div className="grid md:grid-cols-2 gap-6 mb-6">
+// // //           <input
+// // //             name="title"
+// // //             placeholder="Video Title"
+// // //             value={uploadData.title}
+// // //             onChange={handleUploadChange}
+// // //             className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:text-amber-400 hover:cursor-pointer"
+// // //           />
+// // //           <input
+// // //             name="videoRef"
+// // //             placeholder="Video Ref (optional)"
+// // //             value={uploadData.videoRef}
+// // //             onChange={handleUploadChange}
+// // //             className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:cursor-pointer"
+// // //           />
+// // //           <input
+// // //             type="file"
+// // //             accept="video/*"
+// // //             onChange={handleVideoFileChange}
+// // //             className="md:col-span-2 p-4 rounded-lg border-2 bg-white dark:bg-gray-700 dark:text-white cursor-pointer"
+// // //           />
+// // //         </div>
+
+// // //         {uploading ? (
+// // //           <div className="mb-4">
+// // //             <progress value={uploadProgress} max="100" className="w-full h-3 rounded-lg" />
+// // //             <button
+// // //               type="button"
+// // //               onClick={cancelUpload}
+// // //               className="mt-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all"
+// // //             >
+// // //               Cancel Upload
+// // //             </button>
+// // //           </div>
+// // //         ) : (
+// // //           <button
+// // //             type="submit"
+// // //             className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
+// // //           >
+// // //             Upload Video
+// // //           </button>
+// // //         )}
+// // //       </form>
+
+// // //       <div>
+// // //         <button
+// // //           onClick={() => setIsModalOpen(true)}
+// // //           className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
+// // //         >
+// // //           Upload Video
+// // //         </button>
+      
+
+// // //         {isModalOpen && (
+// // //           <VideoUpload onClose={() => setIsModalOpen(false)} />
+// // //         )}
+// // //       </div>
+
+// // //       <PlaylistVideoManager playlist={playlist} onPlay={handlePlayVideo} />
+// // //     </div>
+// // //   );
+// // // };
+
+// // // export default PlaylistDetailsPage;
+
+
+// // /* eslint-disable no-unused-vars */
+// // "use client";
+// // import React, { useEffect, useState, useCallback } from "react";
+// // import { useParams, useNavigate, Link } from "react-router-dom";
+// // import { XCircle, Clock } from "lucide-react";
+// // import VideoUpload from "../components/VideoCard/UploadCard.jsx";
+// // import toast from "react-hot-toast";
+// // import axios from "axios";
+// // import API from "../../utils/axiosInstance.jsx";
+// // import PlaylistVideoManager from "./PlaylistVideoManager.jsx";
+// // import { useAuth } from "../../context/AuthContext";
+
+// // const VideoPlayerModal = ({ videoUrl, isOpen, onClose }) => {
+// //   if (!isOpen) return null;
+// //   return (
+// //     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+// //       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 max-w-2xl w-full relative">
+// //         <button
+// //           onClick={onClose}
+// //           className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+// //         >
+// //           <XCircle className="w-6 h-6" />
+// //         </button>
+// //         <video src={videoUrl} controls autoPlay className="w-full rounded" />
+// //       </div>
+// //     </div>
+// //   );
+// // };
+
+// // const PlaylistDetailsPage = () => {
+// //   const { id } = useParams();
+// //   const navigate = useNavigate();
+// //   const { auth, clearAuthData, checkAuth } = useAuth();
+
+// //   const [playlist, setPlaylist] = useState(null);
+// //   const [loading, setLoading] = useState(true);
+// //   const [isEditMode, setIsEditMode] = useState(false);
+// //   const [formData, setFormData] = useState({ name: "", description: "" });
+// //   const [uploadData, setUploadData] = useState({ title: "", videoRef: "", videoFile: null });
+// //   const [uploading, setUploading] = useState(false);
+// //   const [uploadProgress, setUploadProgress] = useState(0);
+// //   const [cancelTokenSource, setCancelTokenSource] = useState(null);
+// //   const [videoUrl, setVideoUrl] = useState("");
+// //   const [isModalOpen, setIsModalOpen] = useState(false);
+
+// //   useEffect(() => {
+// //     if (!auth.loading && !auth.isAuthenticated) {
+// //       navigate('/login');
+// //       toast.error('Please login to access this page');
+// //     }
+// //   }, [auth, navigate]);
+
+// //   const fetchPlaylist = useCallback(async () => {
+// //     try {
+// //       setLoading(true);
+// //       if (!auth.isAuthenticated) return;
+      
+// //       const res = await API.get(`/users/playlist/${id}`, {
+// //         headers: {
+// //           Authorization: `Bearer ${auth.token}`
+// //         }
+// //       });
+// //       setPlaylist(res.data.data);
+// //       setFormData({
+// //         name: res.data.data.name || "",
+// //         description: res.data.data.description || "",
+// //       });
+// //     } catch (err) {
+// //       console.error(err);
+// //       if (err.response?.status === 401) {
+// //         clearAuthData();
+// //         navigate('/login');
+// //       } else {
+// //         toast.error("Could not load playlist.");
+// //         navigate("/playlists");
+// //       }
+// //     } finally {
+// //       setLoading(false);
+// //     }
+// //   }, [id, navigate, auth, clearAuthData]);
+
+// //   useEffect(() => {
+// //     if (auth.isAuthenticated && id) {
+// //       fetchPlaylist();
+// //     } else if (!id) {
+// //       toast.error("Invalid playlist ID");
+// //       navigate("/playlists");
+// //     }
+// //   }, [id, fetchPlaylist, auth, navigate]);
+
+// //   const handleUpdatePlaylist = async (e) => {
+// //     e.preventDefault();
+// //     try {
+// //       await API.put(`/user/playlist/${id}`, formData, {
+// //         // headers: {
+// //         //   Authorization: `Bearer ${auth.token}`
+// //         // }
+// //       });
+// //       toast.success("Playlist updated!");
+// //       setIsEditMode(false);
+// //       fetchPlaylist();
+// //     } catch (error) {
+// //       if (error.response?.status === 401) {
+// //         clearAuthData();
+// //         navigate('/login');
+// //       } else {
+// //         toast.error("Failed to update playlist.");
+// //       }
+// //     }
+// //   };
+
+// //   const handlePlayVideo = async (videoId) => {
+// //     try {
+// //       const res = await API.get(`/user/playlist/videos/${videoId}`, {
+// //         headers: {
+// //           Authorization: `Bearer ${auth.token}`
+// //         }
+// //       });
+// //       const url = res.data?.data?.url;
+// //       if (url) {
+// //         setVideoUrl(url);
+// //         setIsModalOpen(true);
+// //       } else {
+// //         toast.error("Video URL not found");
+// //       }
+// //     } catch (err) {
+// //       if (err.response?.status === 401) {
+// //         clearAuthData();
+// //         navigate('/login');
+// //       } else {
+// //         toast.error("Failed to load video");
+// //       }
+// //     }
+// //   };
+
+// //   const handleUploadChange = (e) => {
+// //     setUploadData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+// //   };
+
+// //   const handleVideoFileChange = (e) => {
+// //     const file = e.target.files[0];
+// //     setUploadData((prev) => ({ ...prev, videoFile: file }));
+// //   };
+
+// //   const cancelUpload = () => {
+// //     if (cancelTokenSource) {
+// //       cancelTokenSource.cancel("Upload canceled by user.");
+// //       toast("Upload canceled.");
+// //     }
+// //     setUploading(false);
+// //     setUploadProgress(0);
+// //   };
+
+// //   const handleUploadVideo = async (e) => {
+// //     e.preventDefault();
+// //     const { title, videoRef, videoFile } = uploadData;
+// //     if (!title || !videoFile) return toast.error("Please fill all fields");
+
+// //     const form = new FormData();
+// //     form.append("title", title);
+// //     form.append("video", videoFile);
+// //     if (videoRef) form.append("videoRef", videoRef);
+
+// //     const source = axios.CancelToken.source();
+// //     setCancelTokenSource(source);
+// //     setUploading(true);
+// //     setUploadProgress(0);
+
+// //     try {
+// //       const response = await API.post(`/users/playlist/${id}/videos`, form, {
+// //         headers: { 
+// //           "Content-Type": "multipart/form-data",
+// //           Authorization: `Bearer ${auth.token}`
+// //         },
+// //         cancelToken: source.token,
+// //         onUploadProgress: (e) => {
+// //           const percent = Math.round((e.loaded * 100) / e.total);
+// //           setUploadProgress(percent);
+// //         },
+// //       });
+
+// //       toast.success("Video added!");
+// //       fetchPlaylist();
+// //       setUploadData({ title: "", videoFile: null, videoRef: "" });
+// //     } catch (err) {
+// //       if (axios.isCancel(err)) {
+// //         toast.info("Video upload was canceled.");
+// //       } else if (err.response?.status === 401) {
+// //         clearAuthData();
+// //         navigate('/login');
+// //       } else {
+// //         toast.error(err?.response?.data?.message || "Upload failed");
+// //       }
+// //     } finally {
+// //       setUploading(false);
+// //       setUploadProgress(0);
+// //     }
+// //   };
+
+// //   if (loading) {
+// //     return (
+// //       <div className="flex justify-center items-center h-screen">
+// //         <span className="text-lg text-gray-500">Loading...</span>
+// //       </div>
+// //     );
+// //   }
+
+// //   return (
+// //     <div className="p-6 sm:p-8 max-w-6xl mx-auto">
+// //       <VideoPlayerModal videoUrl={videoUrl} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+// //       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+// //         {isEditMode ? (
+// //           <input
+// //             type="text"
+// //             value={formData.name}
+// //             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+// //             className="text-3xl sm:text-4xl font-bold px-4 py-3 border-2 border-blue-500 rounded-lg w-full dark:bg-gray-800 dark:text-white"
+// //           />
+// //         ) : (
+// //           <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 dark:text-white">
+// //             {playlist?.name}
+// //           </h1>
+// //         )}
+// //         <div className="flex flex-wrap gap-3 w-full md:w-auto">
+// //           <Link
+// //             to="/history"
+// //             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-700 dark:hover:bg-blue-800"
+// //           >
+// //             <Clock className="w-4 h-4" />
+// //             <span className="hidden sm:inline">View History</span>
+// //           </Link>
+// //           <button 
+// //             onClick={() => navigate("/AnalyticsSection")}
+// //             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-600"
+// //           >
+// //             <span className="hidden sm:inline">View Analytics</span>
+// //           </button>
+// //         </div>
+// //       </div>
+
+// //       <div className="mb-10">
+// //         <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-300 mb-2">
+// //           Description
+// //         </h3>
+// //         {isEditMode ? (
+// //           <textarea
+// //             value={formData.description}
+// //             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+// //             className="w-full p-4 border-2 border-blue-500 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
+// //             rows={4}
+// //           />
+// //         ) : (
+// //           <p className="text-gray-600 dark:text-gray-400">{playlist?.description}</p>
+// //         )}
+// //       </div>
+
+// //       <div className="flex flex-wrap gap-4 mb-12">
+// //         <button
+// //           onClick={() => setIsEditMode((prev) => !prev)}
+// //           className="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
+// //         >
+// //           {isEditMode ? "Cancel" : "Edit Playlist"}
+// //         </button>
+// //         {isEditMode && (
+// //           <button
+// //             onClick={handleUpdatePlaylist}
+// //             className="px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all"
+// //           >
+// //             Save Changes
+// //           </button>
+// //         )}
+// //       </div>
+
+// //       <form onSubmit={handleUploadVideo} className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-12">
+// //         <h3 className="text-xl font-semibold mb-5 text-gray-700 dark:text-white">
+// //           Upload New Video
+// //         </h3>
+// //         <div className="grid md:grid-cols-2 gap-6 mb-6">
+// //           <input
+// //             name="title"
+// //             placeholder="Video Title"
+// //             value={uploadData.title}
+// //             onChange={handleUploadChange}
+// //             className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:text-amber-400 hover:cursor-pointer"
+// //           />
+// //           <input
+// //             name="videoRef"
+// //             placeholder="Video Ref (optional)"
+// //             value={uploadData.videoRef}
+// //             onChange={handleUploadChange}
+// //             className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:cursor-pointer"
+// //           />
+// //           <input
+// //             type="file"
+// //             accept="video/*"
+// //             onChange={handleVideoFileChange}
+// //             className="md:col-span-2 p-4 rounded-lg border-2 bg-white dark:bg-gray-700 dark:text-white cursor-pointer"
+// //           />
+// //         </div>
+
+// //         {uploading ? (
+// //           <div className="mb-4">
+// //             <progress value={uploadProgress} max="100" className="w-full h-3 rounded-lg" />
+// //             <button
+// //               type="button"
+// //               onClick={cancelUpload}
+// //               className="mt-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all"
+// //             >
+// //               Cancel Upload
+// //             </button>
+// //           </div>
+// //         ) : (
+// //           <button
+// //             type="submit"
+// //             className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
+// //           >
+// //             Upload Video
+// //           </button>
+// //         )}
+// //       </form>
+
+// //       <div>
+// //         <button
+// //           onClick={() => setIsModalOpen(true)}
+// //           className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
+// //         >
+// //           Upload Video
+// //         </button>
+      
+// //         {isModalOpen && (
+// //           <VideoUpload onClose={() => setIsModalOpen(false)} />
+// //         )}
+// //       </div>
+
+// //       <PlaylistVideoManager playlist={playlist} onPlay={handlePlayVideo} />
+// //     </div>
+// //   );
+// // };
+
+// // export default PlaylistDetailsPage;
+
+
 // /* eslint-disable no-unused-vars */
 // "use client";
 // import React, { useEffect, useState, useCallback } from "react";
@@ -8,6 +731,7 @@
 // import axios from "axios";
 // import API from "../../utils/axiosInstance.jsx";
 // import PlaylistVideoManager from "./PlaylistVideoManager.jsx";
+// import { useAuth } from "../../context/AuthContext";
 
 // const VideoPlayerModal = ({ videoUrl, isOpen, onClose }) => {
 //   if (!isOpen) return null;
@@ -29,6 +753,7 @@
 // const PlaylistDetailsPage = () => {
 //   const { id } = useParams();
 //   const navigate = useNavigate();
+//   const { auth, clearAuthData } = useAuth();
 
 //   const [playlist, setPlaylist] = useState(null);
 //   const [loading, setLoading] = useState(true);
@@ -41,29 +766,11 @@
 //   const [videoUrl, setVideoUrl] = useState("");
 //   const [isModalOpen, setIsModalOpen] = useState(false);
 
-//   // Check authentication status
-//   const checkAuth = useCallback(() => {
-//     const token = localStorage.getItem('accessToken');
-
-//     if (!token) {
-//       navigate('/login');
-//       toast.error('Please login to access this page');
-//     }
-//   }, [navigate]);
-
 //   const fetchPlaylist = useCallback(async () => {
 //     try {
 //       setLoading(true);
-//       const token = localStorage.getItem('accessToken');
-//       if (!token) {
-//         checkAuth();
-//         return;
-//       }
-//       const res = await API.get(`/users/playlist/${id}`, {
-//         headers: {
-//           Authorization: `Bearer ${token}`
-//         }
-//       });
+//       // Allow access to playlist details without authentication
+//       const res = await API.get(`/users/playlist/${id}`);
 //       setPlaylist(res.data.data);
 //       setFormData({
 //         name: res.data.data.name || "",
@@ -71,71 +778,44 @@
 //       });
 //     } catch (err) {
 //       console.error(err);
-//       if (err.response?.status === 401) {
-//         localStorage.removeItem('accesstoken');
-//         checkAuth();
-//       } else {
-//         toast.error("Could not load playlist.");
-//         navigate("/playlists");
-//       }
+//       toast.error("Could not load playlist.");
+//       navigate("/playlists");
 //     } finally {
 //       setLoading(false);
 //     }
-//   }, [id, navigate, checkAuth]);
+//   }, [id, navigate]);
 
 //   useEffect(() => {
-//     checkAuth(); // Check auth on initial load
-//     fetchPlaylist();
-//     if (!id) {
+//     if (id) {
+//       fetchPlaylist();
+//     } else {
 //       toast.error("Invalid playlist ID");
 //       navigate("/playlists");
-//       return;
 //     }
-//     fetchPlaylist();
-//   }, [id, fetchPlaylist, checkAuth, navigate]);
-
-//   // Add token to all API requests
-//   const apiWithAuth = {
-//     get: async (url) => {
-//       const token = localStorage.getItem('accessToken');
-
-//       return API.get(url, {
-//         headers: {
-//           Authorization: `Bearer ${token}`
-//         }
-//       });
-//     },
-//     post: async (url, data) => {
-//       const token = localStorage.getItem('accessToken');
-// ;
-//       return api.post(url, data, {
-//         headers: {
-//           Authorization: `Bearer ${token}`
-//         }
-//       });
-//     },
-//     put: async (url, data) => {
-//      const token = localStorage.getItem('accessToken');
-
-//       return API.put(url, data, {
-//         headers: {
-//           Authorization: `Bearer ${token}`
-//         }
-//       });
-//     }
-//   };
+//   }, [id, fetchPlaylist, navigate]);
 
 //   const handleUpdatePlaylist = async (e) => {
 //     e.preventDefault();
+//     // Check authentication
+//     if (!auth.isAuthenticated) {
+//       toast.error("Please login to update playlist");
+//       navigate('/login');
+//       return;
+//     }
+    
 //     try {
-//       await apiWithAuth.put(`/users/playlist/${id}`, formData);
+//       await API.put(`/user/playlist/${id}`, formData, {
+//         headers: {
+//           Authorization: `Bearer ${auth.token}`
+//         }
+//       });
 //       toast.success("Playlist updated!");
 //       setIsEditMode(false);
 //       fetchPlaylist();
 //     } catch (error) {
 //       if (error.response?.status === 401) {
-//         localStorage.removeItem('accessToken');
-//         checkAuth();
+//         clearAuthData();
+//         navigate('/login');
 //       } else {
 //         toast.error("Failed to update playlist.");
 //       }
@@ -144,7 +824,8 @@
 
 //   const handlePlayVideo = async (videoId) => {
 //     try {
-//       const res = await apiWithAuth.get(`/user/playlist/videos/${videoId}`);
+//       // Allow video playback without authentication
+//       const res = await API.get(`/user/playlist/videos/${videoId}`);
 //       const url = res.data?.data?.url;
 //       if (url) {
 //         setVideoUrl(url);
@@ -153,20 +834,25 @@
 //         toast.error("Video URL not found");
 //       }
 //     } catch (err) {
-//       if (err.response?.status === 401) {
-//         localStorage.removeItem('accessToken');
-//         checkAuth();
-//       } else {
-//         toast.error("Failed to load video");
-//       }
+//       toast.error("Failed to load video");
 //     }
 //   };
 
 //   const handleUploadChange = (e) => {
+//     // Check authentication before allowing changes
+//     if (!auth.isAuthenticated) {
+//       toast.error("Please login to upload videos");
+//       return;
+//     }
 //     setUploadData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 //   };
 
 //   const handleVideoFileChange = (e) => {
+//     // Check authentication before allowing file selection
+//     if (!auth.isAuthenticated) {
+//       toast.error("Please login to upload videos");
+//       return;
+//     }
 //     const file = e.target.files[0];
 //     setUploadData((prev) => ({ ...prev, videoFile: file }));
 //   };
@@ -182,15 +868,16 @@
 
 //   const handleUploadVideo = async (e) => {
 //     e.preventDefault();
-//     const { title, videoRef, videoFile } = uploadData;
-//     if (!title || !videoFile) return toast.error("Please fill all fields");
-
-//     const token = localStorage.getItem('accessToken');
-
-//     if (!token) {
-//       checkAuth();
+    
+//     // Check authentication
+//     if (!auth.isAuthenticated) {
+//       toast.error("Please login to upload videos");
+//       navigate('/login');
 //       return;
 //     }
+    
+//     const { title, videoRef, videoFile } = uploadData;
+//     if (!title || !videoFile) return toast.error("Please fill all fields");
 
 //     const form = new FormData();
 //     form.append("title", title);
@@ -203,10 +890,10 @@
 //     setUploadProgress(0);
 
 //     try {
-//       const response = await api.post(`/users/playlist/${id}/videos`, form, {
+//       const response = await API.post(`/users/playlist/${id}/videos`, form, {
 //         headers: { 
 //           "Content-Type": "multipart/form-data",
-//           Authorization: `Bearer ${token}`
+//           Authorization: `Bearer ${auth.token}`
 //         },
 //         cancelToken: source.token,
 //         onUploadProgress: (e) => {
@@ -222,8 +909,8 @@
 //       if (axios.isCancel(err)) {
 //         toast.info("Video upload was canceled.");
 //       } else if (err.response?.status === 401) {
-//         localStorage.removeItem('token');
-//         checkAuth();
+//         clearAuthData();
+//         navigate('/login');
 //       } else {
 //         toast.error(err?.response?.data?.message || "Upload failed");
 //       }
@@ -258,21 +945,25 @@
 //             {playlist?.name}
 //           </h1>
 //         )}
-//         <div className="flex flex-wrap gap-3 w-full md:w-auto">
-//           <Link
-//             to="/history"
-//             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-700 dark:hover:bg-blue-800"
-//           >
-//             <Clock className="w-4 h-4" />
-//             <span className="hidden sm:inline">View History</span>
-//           </Link>
-//           <button 
-//             onClick={() => navigate("/AnalyticsSection")}
-//             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-600"
-//           >
-//             <span className="hidden sm:inline">View Analytics</span>
-//           </button>
-//         </div>
+        
+//         {/* Only show these buttons to authenticated users */}
+//         {auth.isAuthenticated && (
+//           <div className="flex flex-wrap gap-3 w-full md:w-auto">
+//             <Link
+//               to="/history"
+//               className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-700 dark:hover:bg-blue-800"
+//             >
+//               <Clock className="w-4 h-4" />
+//               <span className="hidden sm:inline">View History</span>
+//             </Link>
+//             <button 
+//               onClick={() => navigate("/AnalyticsSection")}
+//               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-600"
+//             >
+//               <span className="hidden sm:inline">View Analytics</span>
+//             </button>
+//           </div>
+//         )}
 //       </div>
 
 //       <div className="mb-10">
@@ -291,91 +982,101 @@
 //         )}
 //       </div>
 
-//       <div className="flex flex-wrap gap-4 mb-12">
-//         <button
-//           onClick={() => setIsEditMode((prev) => !prev)}
-//           className="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
-//         >
-//           {isEditMode ? "Cancel" : "Edit Playlist"}
-//         </button>
-//         {isEditMode && (
-//           <button
-//             onClick={handleUpdatePlaylist}
-//             className="px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all"
-//           >
-//             Save Changes
-//           </button>
-//         )}
-//       </div>
-
-//       <form onSubmit={handleUploadVideo} className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-12">
-//         <h3 className="text-xl font-semibold mb-5 text-gray-700 dark:text-white">
-//           Upload New Video
-//         </h3>
-//         <div className="grid md:grid-cols-2 gap-6 mb-6">
-//           <input
-//             name="title"
-//             placeholder="Video Title"
-//             value={uploadData.title}
-//             onChange={handleUploadChange}
-//             className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:text-amber-400 hover:cursor-pointer"
-//           />
-//           <input
-//             name="videoRef"
-//             placeholder="Video Ref (optional)"
-//             value={uploadData.videoRef}
-//             onChange={handleUploadChange}
-//             className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:cursor-pointer"
-//           />
-//           <input
-//             type="file"
-//             accept="video/*"
-//             onChange={handleVideoFileChange}
-//             className="md:col-span-2 p-4 rounded-lg border-2 bg-white dark:bg-gray-700 dark:text-white cursor-pointer"
-//           />
-//         </div>
-
-//         {uploading ? (
-//           <div className="mb-4">
-//             <progress value={uploadProgress} max="100" className="w-full h-3 rounded-lg" />
+//       {/* Only show edit controls to authenticated users */}
+//       {auth.isAuthenticated && (
+//         <>
+//           <div className="flex flex-wrap gap-4 mb-12">
 //             <button
-//               type="button"
-//               onClick={cancelUpload}
-//               className="mt-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all"
+//               onClick={() => setIsEditMode((prev) => !prev)}
+//               className="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
 //             >
-//               Cancel Upload
+//               {isEditMode ? "Cancel" : "Edit Playlist"}
 //             </button>
+//             {isEditMode && (
+//               <button
+//                 onClick={handleUpdatePlaylist}
+//                 className="px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all"
+//               >
+//                 Save Changes
+//               </button>
+//             )}
 //           </div>
-//         ) : (
-//           <button
-//             type="submit"
-//             className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
-//           >
-//             Upload Video
-//           </button>
-//         )}
-//       </form>
 
-//       <div>
-//         <button
-//           onClick={() => setIsModalOpen(true)}
-//           className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
-//         >
-//           Upload Video
-//         </button>
-      
+//           <form onSubmit={handleUploadVideo} className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-12">
+//             <h3 className="text-xl font-semibold mb-5 text-gray-700 dark:text-white">
+//               Upload New Video
+//             </h3>
+//             <div className="grid md:grid-cols-2 gap-6 mb-6">
+//               <input
+//                 name="title"
+//                 placeholder="Video Title"
+//                 value={uploadData.title}
+//                 onChange={handleUploadChange}
+//                 className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:text-amber-400 hover:cursor-pointer"
+//               />
+//               <input
+//                 name="videoRef"
+//                 placeholder="Video Ref (optional)"
+//                 value={uploadData.videoRef}
+//                 onChange={handleUploadChange}
+//                 className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:cursor-pointer"
+//               />
+//               <input
+//                 type="file"
+//                 accept="video/*"
+//                 onChange={handleVideoFileChange}
+//                 className="md:col-span-2 p-4 rounded-lg border-2 bg-white dark:bg-gray-700 dark:text-white cursor-pointer"
+//               />
+//             </div>
 
-//         {isModalOpen && (
-//           <VideoUpload onClose={() => setIsModalOpen(false)} />
-//         )}
-//       </div>
+//             {uploading ? (
+//               <div className="mb-4">
+//                 <progress value={uploadProgress} max="100" className="w-full h-3 rounded-lg" />
+//                 <button
+//                   type="button"
+//                   onClick={cancelUpload}
+//                   className="mt-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all"
+//                 >
+//                   Cancel Upload
+//                 </button>
+//               </div>
+//             ) : (
+//               <button
+//                 type="submit"
+//                 className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
+//               >
+//                 Upload Video
+//               </button>
+//             )}
+//           </form>
 
-//       <PlaylistVideoManager playlist={playlist} onPlay={handlePlayVideo} />
+//           <div>
+//             <button
+//               onClick={() => setIsModalOpen(true)}
+//               className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
+//             >
+//               Upload Video
+//             </button>
+          
+//             {isModalOpen && (
+//               <VideoUpload onClose={() => setIsModalOpen(false)} />
+//             )}
+//           </div>
+//         </>
+//       )}
+
+//       {/* Videos are always accessible to all users */}
+//       <PlaylistVideoManager 
+//         playlist={playlist} 
+//         onPlay={handlePlayVideo} 
+//         canEdit={auth.isAuthenticated} 
+//       />
 //     </div>
 //   );
 // };
 
 // export default PlaylistDetailsPage;
+
 
 
 /* eslint-disable no-unused-vars */
@@ -393,11 +1094,12 @@ import { useAuth } from "../../context/AuthContext";
 const VideoPlayerModal = ({ videoUrl, isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 max-w-2xl w-full relative">
         <button
           onClick={onClose}
           className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+          aria-label="Close video"
         >
           <XCircle className="w-6 h-6" />
         </button>
@@ -410,116 +1112,135 @@ const VideoPlayerModal = ({ videoUrl, isOpen, onClose }) => {
 const PlaylistDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { auth, clearAuthData, checkAuth } = useAuth();
+  const { auth, clearAuthData } = useAuth();
 
   const [playlist, setPlaylist] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({ name: "", description: "" });
-  const [uploadData, setUploadData] = useState({ title: "", videoRef: "", videoFile: null });
+
+  // Upload flow (inline form removed — using Upload Modal only)
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [cancelTokenSource, setCancelTokenSource] = useState(null);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (!auth.loading && !auth.isAuthenticated) {
-      navigate('/login');
-      toast.error('Please login to access this page');
-    }
-  }, [auth, navigate]);
+  // Modals separated to avoid conflicts
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const [videoUrl, setVideoUrl] = useState("");
+  const [isOwner, setIsOwner] = useState(false);
+
+  const getId = (x) =>
+    typeof x === "object" && x !== null
+      ? x._id || x.id
+      : x;
 
   const fetchPlaylist = useCallback(async () => {
     try {
       setLoading(true);
-      if (!auth.isAuthenticated) return;
-      
-      const res = await API.get(`/users/playlist/${id}`, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
-      setPlaylist(res.data.data);
+
+      // PUBLIC endpoint to fetch playlist
+      const res = await API.get(`/users/playlist/${id}`);
+      const playlistData = res.data?.data;
+
+      setPlaylist(playlistData);
       setFormData({
-        name: res.data.data.name || "",
-        description: res.data.data.description || "",
+        name: playlistData?.name || "",
+        description: playlistData?.description || "",
       });
+
+      // robust owner check
+      const ownerId = getId(playlistData?.owner);
+      const authId = getId(auth?.user);
+      setIsOwner(Boolean(auth?.isAuthenticated) && ownerId && authId && String(ownerId) === String(authId));
     } catch (err) {
       console.error(err);
-      if (err.response?.status === 401) {
-        clearAuthData();
-        navigate('/login');
-      } else {
-        toast.error("Could not load playlist.");
-        navigate("/playlists");
-      }
+      toast.error("Could not load playlist.");
+      navigate("/playlists");
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, auth, clearAuthData]);
+  }, [id, navigate, auth?.isAuthenticated, auth?.user]);
 
   useEffect(() => {
-    if (auth.isAuthenticated && id) {
-      fetchPlaylist();
-    } else if (!id) {
+    if (!id) {
       toast.error("Invalid playlist ID");
       navigate("/playlists");
+      return;
     }
-  }, [id, fetchPlaylist, auth, navigate]);
+    fetchPlaylist();
+  }, [id, fetchPlaylist, navigate]);
 
   const handleUpdatePlaylist = async (e) => {
     e.preventDefault();
+
+    if (!auth?.isAuthenticated || !isOwner) {
+      toast.error("You don't have permission to update this playlist");
+      return;
+    }
+
     try {
-      await API.put(`/user/playlist/${id}`, formData, {
-        // headers: {
-        //   Authorization: `Bearer ${auth.token}`
-        // }
-      });
+      await API.put(
+        `/users/playlist/${id}`,
+        { name: formData.name, description: formData.description },
+        { headers: { Authorization: `Bearer ${auth?.token}` } }
+      );
+
       toast.success("Playlist updated!");
       setIsEditMode(false);
       fetchPlaylist();
     } catch (error) {
-      if (error.response?.status === 401) {
+      if (error?.response?.status === 401) {
         clearAuthData();
-        navigate('/login');
+        navigate("/login");
+      } else if (error?.response?.status === 403) {
+        toast.error("Not allowed to update this playlist.");
       } else {
-        toast.error("Failed to update playlist.");
+        toast.error(error?.response?.data?.message || "Failed to update playlist.");
       }
     }
   };
 
   const handlePlayVideo = async (videoId) => {
     try {
-      const res = await API.get(`/user/playlist/videos/${videoId}`, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
-      const url = res.data?.data?.url;
-      if (url) {
-        setVideoUrl(url);
-        setIsModalOpen(true);
-      } else {
+      // PUBLIC endpoint to get a playable URL
+      const res = await API.get(`/users/playlist/videos/${videoId}`);
+      const url = res?.data?.data?.url;
+      if (!url) {
         toast.error("Video URL not found");
+        return;
       }
+      setVideoUrl(url);
+      setIsVideoModalOpen(true);
     } catch (err) {
-      if (err.response?.status === 401) {
-        clearAuthData();
-        navigate('/login');
-      } else {
-        toast.error("Failed to load video");
-      }
+      toast.error("Failed to load video");
     }
   };
 
-  const handleUploadChange = (e) => {
-    setUploadData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  // Optional: wired to Upload modal via callbacks (if your UploadCard supports it)
+  const startTrackedUpload = (source) => {
+    setCancelTokenSource(source);
+    setUploading(true);
+    setUploadProgress(0);
   };
 
-  const handleVideoFileChange = (e) => {
-    const file = e.target.files[0];
-    setUploadData((prev) => ({ ...prev, videoFile: file }));
+  const updateProgress = (percent) => {
+    setUploadProgress(percent);
+  };
+
+  const finishUpload = (ok = true, message = "") => {
+    setUploading(false);
+    setUploadProgress(0);
+    setCancelTokenSource(null);
+    if (ok) {
+      toast.success(message || "Video added!");
+      fetchPlaylist();
+      setIsUploadModalOpen(false);
+    } else if (message) {
+      toast.error(message);
+    }
   };
 
   const cancelUpload = () => {
@@ -529,52 +1250,6 @@ const PlaylistDetailsPage = () => {
     }
     setUploading(false);
     setUploadProgress(0);
-  };
-
-  const handleUploadVideo = async (e) => {
-    e.preventDefault();
-    const { title, videoRef, videoFile } = uploadData;
-    if (!title || !videoFile) return toast.error("Please fill all fields");
-
-    const form = new FormData();
-    form.append("title", title);
-    form.append("video", videoFile);
-    if (videoRef) form.append("videoRef", videoRef);
-
-    const source = axios.CancelToken.source();
-    setCancelTokenSource(source);
-    setUploading(true);
-    setUploadProgress(0);
-
-    try {
-      const response = await API.post(`/users/playlist/${id}/videos`, form, {
-        headers: { 
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${auth.token}`
-        },
-        cancelToken: source.token,
-        onUploadProgress: (e) => {
-          const percent = Math.round((e.loaded * 100) / e.total);
-          setUploadProgress(percent);
-        },
-      });
-
-      toast.success("Video added!");
-      fetchPlaylist();
-      setUploadData({ title: "", videoFile: null, videoRef: "" });
-    } catch (err) {
-      if (axios.isCancel(err)) {
-        toast.info("Video upload was canceled.");
-      } else if (err.response?.status === 401) {
-        clearAuthData();
-        navigate('/login');
-      } else {
-        toast.error(err?.response?.data?.message || "Upload failed");
-      }
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
   };
 
   if (loading) {
@@ -587,14 +1262,38 @@ const PlaylistDetailsPage = () => {
 
   return (
     <div className="p-6 sm:p-8 max-w-6xl mx-auto">
-      <VideoPlayerModal videoUrl={videoUrl} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      {/* Video Player */}
+      <VideoPlayerModal
+        videoUrl={videoUrl}
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+      />
 
+      {/* Upload Modal */}
+      {isUploadModalOpen && auth?.isAuthenticated && isOwner && (
+        <VideoUpload
+          onClose={() => setIsUploadModalOpen(false)}
+          // Pass through auth + playlist if your UploadCard needs them
+          authToken={auth?.token}
+          playlistId={id}
+          // If your UploadCard posts directly, give it the config + callbacks:
+          apiInstance={API}
+          uploadUrl={`/users/playlist/${id}/videos`}
+          onStart={startTrackedUpload}
+          onProgress={updateProgress}
+          onDone={() => finishUpload(true, "Video added!")}
+          onError={(msg) => finishUpload(false, msg || "Upload failed")}
+          cancelTokenSourceRef={(src) => setCancelTokenSource(src)}
+        />
+      )}
+
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         {isEditMode ? (
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
             className="text-3xl sm:text-4xl font-bold px-4 py-3 border-2 border-blue-500 rounded-lg w-full dark:bg-gray-800 dark:text-white"
           />
         ) : (
@@ -602,23 +1301,28 @@ const PlaylistDetailsPage = () => {
             {playlist?.name}
           </h1>
         )}
-        <div className="flex flex-wrap gap-3 w-full md:w-auto">
-          <Link
-            to="/history"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-700 dark:hover:bg-blue-800"
-          >
-            <Clock className="w-4 h-4" />
-            <span className="hidden sm:inline">View History</span>
-          </Link>
-          <button 
-            onClick={() => navigate("/AnalyticsSection")}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-600"
-          >
-            <span className="hidden sm:inline">View Analytics</span>
-          </button>
-        </div>
+
+        {/* Owner-only actions */}
+        {auth?.isAuthenticated && isOwner && (
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+            <Link
+              to="/history"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition dark:bg-blue-700 dark:hover:bg-blue-800"
+            >
+              <Clock className="w-4 h-4" />
+              <span className="hidden sm:inline">View History</span>
+            </Link>
+            <button
+              onClick={() => navigate("/AnalyticsSection")}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-600"
+            >
+              <span className="hidden sm:inline">View Analytics</span>
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Description */}
       <div className="mb-10">
         <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-300 mb-2">
           Description
@@ -626,7 +1330,7 @@ const PlaylistDetailsPage = () => {
         {isEditMode ? (
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
             className="w-full p-4 border-2 border-blue-500 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
             rows={4}
           />
@@ -635,85 +1339,59 @@ const PlaylistDetailsPage = () => {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-4 mb-12">
-        <button
-          onClick={() => setIsEditMode((prev) => !prev)}
-          className="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
-        >
-          {isEditMode ? "Cancel" : "Edit Playlist"}
-        </button>
-        {isEditMode && (
-          <button
-            onClick={handleUpdatePlaylist}
-            className="px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all"
-          >
-            Save Changes
-          </button>
-        )}
-      </div>
-
-      <form onSubmit={handleUploadVideo} className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-12">
-        <h3 className="text-xl font-semibold mb-5 text-gray-700 dark:text-white">
-          Upload New Video
-        </h3>
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          <input
-            name="title"
-            placeholder="Video Title"
-            value={uploadData.title}
-            onChange={handleUploadChange}
-            className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:text-amber-400 hover:cursor-pointer"
-          />
-          <input
-            name="videoRef"
-            placeholder="Video Ref (optional)"
-            value={uploadData.videoRef}
-            onChange={handleUploadChange}
-            className="p-4 rounded-lg border-2 border-blue-500 dark:bg-gray-700 dark:text-white hover:cursor-pointer"
-          />
-          <input
-            type="file"
-            accept="video/*"
-            onChange={handleVideoFileChange}
-            className="md:col-span-2 p-4 rounded-lg border-2 bg-white dark:bg-gray-700 dark:text-white cursor-pointer"
-          />
-        </div>
-
-        {uploading ? (
-          <div className="mb-4">
-            <progress value={uploadProgress} max="100" className="w-full h-3 rounded-lg" />
+      {/* Owner controls */}
+      {auth?.isAuthenticated && isOwner && (
+        <>
+          <div className="flex flex-wrap gap-4 mb-8">
             <button
-              type="button"
-              onClick={cancelUpload}
-              className="mt-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all"
+              onClick={() => setIsEditMode((prev) => !prev)}
+              className="px-5 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
             >
-              Cancel Upload
+              {isEditMode ? "Cancel" : "Edit Playlist"}
+            </button>
+            {isEditMode && (
+              <button
+                onClick={handleUpdatePlaylist}
+                className="px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all"
+              >
+                Save Changes
+              </button>
+            )}
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all"
+            >
+              Upload Video
             </button>
           </div>
-        ) : (
-          <button
-            type="submit"
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
-          >
-            Upload Video
-          </button>
-        )}
-      </form>
 
-      <div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition-all dark:bg-blue-500 dark:hover:bg-blue-600"
-        >
-          Upload Video
-        </button>
-      
-        {isModalOpen && (
-          <VideoUpload onClose={() => setIsModalOpen(false)} />
-        )}
-      </div>
+          {/* Optional: live upload progress if your Upload modal reports it */}
+          {uploading && (
+            <div className="mb-8 bg-gray-100 dark:bg-gray-800 p-4 rounded-xl">
+              <progress value={uploadProgress} max="100" className="w-full h-3 rounded-lg" />
+              <div className="mt-2 flex items-center gap-3">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  Uploading… {uploadProgress}%
+                </span>
+                <button
+                  type="button"
+                  onClick={cancelUpload}
+                  className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all text-sm"
+                >
+                  Cancel Upload
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
-      <PlaylistVideoManager playlist={playlist} onPlay={handlePlayVideo} />
+      {/* Videos list (public) */}
+      <PlaylistVideoManager
+        playlist={playlist}
+        onPlay={handlePlayVideo}
+        canEdit={Boolean(auth?.isAuthenticated && isOwner)}
+      />
     </div>
   );
 };

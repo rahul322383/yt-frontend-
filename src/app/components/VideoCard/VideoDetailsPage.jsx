@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+// /* eslint-disable no-unused-vars */
 
 // "use client";
 // import React, { useEffect, useRef, useState } from "react";
@@ -47,8 +47,8 @@
 //   const isAuth = !!token;
 //   const isGuest = !currentUser;
 
-//   // Check if current user is the owner of the video
-//   const isOwner = currentUser?._id === video?.owner?._id;
+//   const isOwner = video?.isOwner;
+
 
 //   useEffect(() => {
 //     fetchData();
@@ -108,7 +108,7 @@
 //     try {
 //       const res = await API.post(`/users/watch-later/${videoId}`);
       
-//       setWatchLater(!watchLater);
+//        setWatchLater(res.data?.isInWatchLater);
 //       toast.success(watchLater ? "Removed from Watch Later" : "Added to Watch Later");
 //     } catch (err) {
 //       toast.error(err.response?.data?.message || "Failed to update Watch Later");
@@ -251,12 +251,12 @@
 
 //                 <div className="flex gap-3 items-center">
 //                   <SubscriptionButton
-//                     channelId={video?.channelId}
-//                     isSubscribedInitially={video?.isSubscribed}
-//                     isNotifiedInitially={video?.notificationEnabled}
-//                     subscriberCount={video?.subscriberCount || 0}
-//                     isOwnChannel={isOwner}
-//                   />
+//   channelId={video.owner.channelId}
+//   isSubscribedInitially={video.isSubscribed || false}   // ✅ aligned with API
+//   subscriberCount={video.subscribersCount ?? 0}         // ✅ fallback safe
+//   isNotifiedInitially={video.notificationEnabled || false}
+//   isOwnChannel={isOwner}
+// />
 //                   <div className="relative">
 //                     <button 
 //                       onClick={() => setShowMenu(!showMenu)}
@@ -316,12 +316,13 @@
 //               {/* Action Buttons */}
 //               <div className="flex flex-wrap gap-3 mt-6">
 //                 <LikeButton
-//                   videoId={video._id}
-//                   initialLikeState={video.isLiked}
-//                   initialLikeCount={video.likes}
-//                   initialDislikeCount={video.dislikes}
-//                   isAuthenticated={isAuth}
-//                 />
+//   videoId={video._id}
+//   initialLikeState={video.isLiked ?? false}             // ✅ safe fallback
+//   initialLikeCount={video.likeCount ?? 0}
+//   initialDislikeCount={video.dislikeCount ?? 0}
+//   isAuthenticated={isAuth}
+// />
+
 
 //                 <button
 //                   onClick={toggleAutoplay}
@@ -449,6 +450,7 @@
 
 // export default VideoDetailPage;
 
+/* eslint-disable no-unused-vars */
 
 "use client";
 import React, { useEffect, useRef, useState } from "react";
@@ -466,14 +468,9 @@ import {
   FaPlay, 
   FaPause, 
   FaEdit, 
-  FaTrash,
-  FaEllipsisV,
-  FaThumbsUp,
-  FaThumbsDown,
-  FaShare
+  FaTrash
 } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { IoClose } from "react-icons/io5";
 
 const VideoDetailPage = () => {
   const { id: videoId } = useParams();
@@ -496,29 +493,16 @@ const VideoDetailPage = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [isSidebarSticky, setIsSidebarSticky] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   
   const token = localStorage.getItem("accessToken");
   const isAuth = !!token;
-  const isGuest = !currentUser;
-  const isOwner = video?.isOwner ?? (currentUser?._id === video?.owner?._id);
+  const isOwner = video?.isOwner;
 
   useEffect(() => {
     fetchData();
   }, [videoId]);
 
-  useEffect(() => {
-    if (video) {
-      setEditTitle(video.title);
-      setEditDesc(video.description);
-    }
-  }, [video]);
-
+  // Save preferences to localStorage
   useEffect(() => {
     localStorage.setItem("autoplay", JSON.stringify(autoplay));
     localStorage.setItem("shuffle", JSON.stringify(shuffle));
@@ -527,24 +511,30 @@ const VideoDetailPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-
       const token = localStorage.getItem("accessToken");
 
+      // Fetch the video
       const videoRes = await API.get(`/user/playlist/videos/${videoId}`);
 
       if (videoRes?.data?.success) {
         setVideo(videoRes.data.data.video);
-        setPlaylistVideos(videoRes.data.data.playlistVideos);
+        setPlaylistVideos(videoRes.data.data.playlistVideos || []);
       } else {
         toast.error("Video not found");
+        return;
       }
 
+      // Only fetch user if token exists
       if (token) {
-        const userRes = await API.get("/users/me");
-        setCurrentUser(userRes.data.user); 
-        setWatchLater(userRes.data?.user?.watchLater?.includes(videoId) || false);
+        try {
+          const userRes = await API.get("/users/me");
+          setCurrentUser(userRes.data.user); 
+          setWatchLater(userRes.data?.user?.watchLater?.includes(videoId) || false);
+        } catch (err) {
+          console.error("User fetch error:", err);
+          // Continue without user data but don't break the app
+        }
       }
-
     } catch (err) {
       console.error("Fetch error:", err);
       toast.error(err.response?.data?.message || "Failed to load data");
@@ -569,7 +559,7 @@ const VideoDetailPage = () => {
   const toggleWatchLater = async () => {
     try {
       const res = await API.post(`/users/watch-later/${videoId}`);
-      setWatchLater(!watchLater);
+      setWatchLater(res.data?.isInWatchLater ?? !watchLater);
       toast.success(watchLater ? "Removed from Watch Later" : "Added to Watch Later");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update Watch Later");
@@ -587,7 +577,7 @@ const VideoDetailPage = () => {
       const res = await API.get(`/users/subscribe/channel/${channelId}`);
       setSubscribers(res.data.data);
     } catch (err) {
-      toast.error("Error fetching subscribers");
+      console.error("Error fetching subscribers:", err);
     }
   };
 
@@ -601,60 +591,48 @@ const VideoDetailPage = () => {
     toast.success(`Autoplay ${!autoplay ? "enabled" : "disabled"}`);
   };
 
-  const handleEdit = () => {
-    setShowEditModal(true);
-    setShowMenu(false);
-  };
-
-  const handleDelete = () => {
-    setShowDeleteModal(true);
-    setShowMenu(false);
-  };
-
-  const updateVideo = async (e) => {
-    e.preventDefault();
-    if (editTitle === video.title && editDesc === video.description) {
-      toast.info("No changes detected");
-      return;
-    }
-    setIsUpdating(true);
-    try {
-      await API.put(`/user/playlist/videos/${videoId}`, {
-        title: editTitle,
-        description: editDesc,
-      });
-      toast.success("Video updated successfully");
-      fetchData();
-      setShowEditModal(false);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Update failed");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const handleEdit = () => navigate(`/edit-video/${videoId}`);
   
-  const deleteVideo = async () => {
-    setIsDeleting(true);
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this video permanently?")) return;
     try {
-      await API.delete(`/user/playlist/videos/${videoId}`);
+      await API.delete(`/videos/${videoId}`);
       toast.success("Video deleted");
       navigate("/");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Deletion failed");
-    } finally {
-      setIsDeleting(false);
+      console.error(err);
+      toast.error("Failed to delete video");
     }
   };
 
+  // Format duration helper function
+  const formatDuration = (duration) => {
+    if (!duration || duration === "0") return "0:00";
+    
+    // If it's already formatted, return as is
+    if (typeof duration === "string" && duration.includes(":")) {
+      return duration;
+    }
+    
+    // Convert seconds to MM:SS format
+    const seconds = parseInt(duration);
+    if (isNaN(seconds)) return "0:00";
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Handle sidebar sticky behavior on scroll
   useEffect(() => {
     const handleScroll = () => {
       if (sidebarRef.current) {
         const sidebarRect = sidebarRef.current.getBoundingClientRect();
-        setIsSidebarSticky(sidebarRect.top >= 20);
+        setIsSidebarSticky(sidebarRect.top <= 20);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -674,7 +652,7 @@ const VideoDetailPage = () => {
     <div className="bg-gray-900 min-h-screen text-gray-100">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content */}
+          {/* Main Content (70% width on lg+) */}
           <div className="w-full lg:w-[70%]">
             {/* Video Player */}
             <div className="relative aspect-video w-full bg-black rounded-xl overflow-hidden shadow-lg">
@@ -702,7 +680,7 @@ const VideoDetailPage = () => {
                 {video.title}
               </h1>
               
-              {/* Channel Info */}
+              {/* Channel Info and Actions */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4">
                 <div 
                   className="flex items-center gap-3 cursor-pointer group"
@@ -742,10 +720,10 @@ const VideoDetailPage = () => {
 
                 <div className="flex gap-3 items-center">
                   <SubscriptionButton
-                    channelId={video?.channelId}
-                    isSubscribedInitially={video?.isSubscribed}
-                    isNotifiedInitially={video?.notificationEnabled}
-                    subscriberCount={video?.subscriberCount || 0}
+                    channelId={video.channelId}
+                    isSubscribedInitially={video.isSubscribed || false}
+                    subscriberCount={video.subscribersCount || 0}
+                    isNotifiedInitially={video.notificationEnabled || false}
                     isOwnChannel={isOwner}
                   />
                   <div className="relative">
@@ -808,9 +786,9 @@ const VideoDetailPage = () => {
               <div className="flex flex-wrap gap-3 mt-6">
                 <LikeButton
                   videoId={video._id}
-                  initialLikeState={video.isLiked}
-                  initialLikeCount={video.likes}
-                  initialDislikeCount={video.dislikes}
+                  initialLikeState={video.isLiked || false}
+                  initialLikeCount={video.likeCount || 0}
+                  initialDislikeCount={video.dislikeCount || 0}
                   isAuthenticated={isAuth}
                 />
 
@@ -849,9 +827,9 @@ const VideoDetailPage = () => {
               {/* Comments Section */}
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
-                  {/* <h3 className="text-xl font-semibold">
+                  <h3 className="text-xl font-semibold">
                     Comments ({video.commentCount || 0})
-                  </h3> */}
+                  </h3>
                   <button
                     onClick={() => setShowComments(!showComments)}
                     className="text-yellow-500 hover:text-yellow-400 transition"
@@ -872,7 +850,7 @@ const VideoDetailPage = () => {
             </div>
           </div>
 
-          {/* Playlist Sidebar */}
+          {/* Playlist Sidebar (30% width on lg+) */}
           <div 
             ref={sidebarRef}
             className={`w-full lg:w-[30%] ${isSidebarSticky ? 'lg:sticky lg:top-4' : ''}`}
@@ -896,13 +874,22 @@ const VideoDetailPage = () => {
                       className="flex gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-700/50 transition group"
                     >
                       <div className="relative flex-shrink-0 w-40 h-24 rounded-md overflow-hidden">
-                        <img
-                          src={v.thumbnailUrl || `https://img.youtube.com/vi/${v.videoUrl.split('v=')[1]}/hqdefault.jpg`}
-                          alt={v.title}
+                        <video
+                          src={v.videoUrl + "#t=1"}
+                          muted
+                          preload="metadata"
+                          onMouseOver={(e) => {
+                            e.target.currentTime = 1;
+                            e.target.play().catch(() => {});
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.pause();
+                            e.target.currentTime = 0;
+                          }}
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1 text-xs rounded">
-                         {v.duration || "0:00"}
+                          {formatDuration(v.duration)}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -930,125 +917,6 @@ const VideoDetailPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-          <div 
-            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">
-                  Edit Video
-                </h2>
-                <button 
-                  onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-gray-200 transition"
-                >
-                  <IoClose size={24} />
-                </button>
-              </div>
-              
-              <form onSubmit={updateVideo} className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-300 mb-2">Title</label>
-                  <input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-300 mb-2">Description</label>
-                  <textarea
-                    value={editDesc}
-                    onChange={(e) => setEditDesc(e.target.value)}
-                    rows={4}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isUpdating}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:bg-blue-400 transition flex items-center gap-2"
-                  >
-                    {isUpdating ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Saving...
-                      </>
-                    ) : "Save Changes"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-          <div 
-            className="bg-gray-800 rounded-xl shadow-xl w-full max-w-sm mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">
-                  Delete Video
-                </h2>
-                <button 
-                  onClick={() => setShowDeleteModal(false)}
-                  className="text-gray-400 hover:text-gray-200 transition"
-                >
-                  <IoClose size={24} />
-                </button>
-              </div>
-              <p className="text-gray-300 mb-6">
-                This action cannot be undone. Are you sure you want to delete this video?
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={deleteVideo}
-                  disabled={isDeleting}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg disabled:bg-red-400 transition flex items-center gap-2"
-                >
-                  {isDeleting ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Deleting...
-                    </>
-                  ) : "Delete Permanently"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
