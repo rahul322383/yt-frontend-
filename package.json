@@ -36,7 +36,7 @@
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "link": "^2.1.1",
-    "lint": "^0.8.19",
+    "lint": "^1.1.2",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.487.0",

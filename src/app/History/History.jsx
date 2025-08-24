@@ -169,7 +169,7 @@ const HistoryPage = () => {
           e.target.pause();
           e.target.currentTime = 0;
         }}
-        onClick={() => navigate(`/video/${video.videoId}`)}
+        onClick={() => navigate(`/video/${video._id}`)}
       />
     </div>
 

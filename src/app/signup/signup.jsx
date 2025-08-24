@@ -524,3 +524,4 @@ const SignUpPage = ({ setUser }) => {
 };
 
 export default SignUpPage;
+
