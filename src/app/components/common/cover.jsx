@@ -17,7 +17,7 @@ export default function CoverUpload({
   const [dragActive, setDragActive] = useState(false);
 
   const handleFileChange = async (file) => {
-    if (!file) return;
+    if (!file || loading) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file (JPEG, PNG, WEBP)");
@@ -35,9 +35,7 @@ export default function CoverUpload({
     try {
       setLoading(true);
       const response = await API.put("/users/update-cover", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (!response.data?.success) {
@@ -79,6 +77,7 @@ export default function CoverUpload({
   };
 
   const handleRemove = async () => {
+    if (loading) return;
     try {
       setLoading(true);
       const response = await API.delete("/users/cover-delete");
@@ -123,7 +122,9 @@ export default function CoverUpload({
               alt="Cover"
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.target.src = "/default-cover.jpg";
+                if (e.target.src !== "/default-cover.jpg") {
+                  e.target.src = "/default-cover.jpg";
+                }
               }}
             />
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">

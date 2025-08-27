@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import API from "../../../utils/axiosInstance.jsx";
 import LikeButton from "./likeButton.jsx";
-import VideoModal from "../model/VideoModal.jsx";
 import "../../../index.css";
 
 const LikedVideosPage = () => {
@@ -140,7 +139,7 @@ const LikedVideosPage = () => {
                   {video.description}
                 </p>
 
-                <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {video.views} views
                   </span>
@@ -150,7 +149,7 @@ const LikedVideosPage = () => {
                 </div>
 
                 <div
-                  className="flex flex-wrap gap-2 items-center justify-start mt-3"
+                  className="flex flex-wrap gap-2 items-center justify-start mt-1"
                   onClick={handleActionClick}
                 >
                   <LikeButton videoId={video._id} />
@@ -178,9 +177,6 @@ const LikedVideosPage = () => {
           ))}
         </motion.div>
       )}
-
-      {/* Optional: Video Modal if you want preview mode */}
-      {/* <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} /> */}
     </section>
   );
 };

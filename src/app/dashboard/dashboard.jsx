@@ -4,10 +4,10 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { Sun, Moon, Bell, LogOut, User, Settings, Plus,} from "lucide-react";
+import { Sun, Moon, Bell, LogOut, User, Settings, Plus, Menu, X } from "lucide-react";
 import Sidebar from "../components/sidebar/sidebar.jsx";
 import DashboardVideoCard from "../components/VideoCard/dashvideo.jsx";
-import LikedVideosPage from "../components/VideoCard/LikedVideosPage.jsx"
+import LikedVideosPage from "../components/VideoCard/LikedVideosPage.jsx";
 import API from "../../utils/axiosInstance.jsx";
 import "../../index.css";
 import LoadingSpinner from "../components/common/loadingSpinner.jsx";
@@ -28,11 +28,21 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    () => window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
+  const [darkMode, setDarkMode] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const navigate = useNavigate();
+
+  // Initialize dark mode based on system preference
+  useEffect(() => {
+    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const savedTheme = localStorage.getItem("theme");
+    
+    if (savedTheme) {
+      setDarkMode(savedTheme === "dark");
+    } else {
+      setDarkMode(isDarkMode);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,7 +104,6 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
     localStorage.setItem("theme", darkMode ? "dark" : "light");
@@ -151,39 +160,44 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* <Sidebar
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        user={dashboardData.user}
-        isMenuOpen={isMenuOpen}
-        toggleMenu={() => setMenuOpen(!isMenuOpen)}
-        handleLogout={handleLogout}
-      /> */}
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden">
+   
+     
+
+      {/* Mobile sidebar overlay */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setMenuOpen(false)}></div>
+          <div className="absolute left-0 top-0 h-full w-64 z-50 transform transition-transform">
+            <Sidebar
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+              user={dashboardData.user}
+              isMenuOpen={isMenuOpen}
+              toggleMenu={() => setMenuOpen(!isMenuOpen)}
+              handleLogout={handleLogout}
+            />
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-        <header className="flex justify-between items-center mb-8">
-          {/* <button
-            className="md:hidden p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={() => setMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <header className="flex justify-between items-center mb-6 md:mb-8">
+          <div className="flex items-center">
+            <button
+              className="md:hidden p-2 mr-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+              onClick={() => setMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button> */}
-          
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Creator Dashboard
-          </h1>
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Creator Dashboard
+            </h1>
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               onClick={() => navigate("/notifications")}
@@ -212,14 +226,14 @@ const Dashboard = () => {
             <div className="relative">
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-2 p-1 pr-3 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="flex items-center gap-2 p-1 pr-2 sm:pr-3 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 <img
                   src={dashboardData.user?.avatar || "/default-avatar.png"}
                   alt="User"
                   className="w-8 h-8 rounded-full object-cover"
                 />
-                <span className="font-medium hidden md:inline">
+                <span className="font-medium hidden sm:inline">
                   {dashboardData.user?.username || "User"}
                 </span>
               </button>
@@ -235,6 +249,7 @@ const Dashboard = () => {
                   <Link
                     to="/profile"
                     className="flex items-center px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => setShowProfileDropdown(false)}
                   >
                     <User className="w-5 h-5 mr-3" />
                     Your Profile
@@ -242,6 +257,7 @@ const Dashboard = () => {
                   <Link
                     to="/settings"
                     className="flex items-center px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => setShowProfileDropdown(false)}
                   >
                     <Settings className="w-5 h-5 mr-3" />
                     Settings
@@ -259,66 +275,64 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 md:mb-8">
           <DashboardCard
             icon="👥"
             title="Subscribers"
-            value={dashboardData.subscribers}
+            value={dashboardData.subscribers.toLocaleString()}
             link={`/subscribers/channel/${dashboardData.user?.channelId}`}
             color="bg-blue-100 dark:bg-blue-900"
           />
-<DashboardCard
-  icon="🎥"
-  title="Videos"
-  value={dashboardData.videos?.total || 0}  // Use total count from API
-  link="/videos"
-  color="bg-green-100 dark:bg-green-900"
-/>
-
-              <DashboardCard
-                icon="📊"
-                title="Total Views"
-                value={dashboardData.status.totalViews ?? 0}
-                link="/analytics"
-                color="bg-purple-100 dark:bg-purple-900"
-              />
+          <DashboardCard
+            icon="🎥"
+            title="Videos"
+            value={dashboardData.videos?.total?.toLocaleString() || "0"}
+            link="/videos"
+            color="bg-green-100 dark:bg-green-900"
+          />
+          <DashboardCard
+            icon="📊"
+            title="Total Views"
+            value={(dashboardData.status.totalViews || 0).toLocaleString()}
+            link="/analytics"
+            color="bg-purple-100 dark:bg-purple-900"
+          />
           <DashboardCard
             icon="🔔"
             title="Subscriptions"
-            value={dashboardData.subscribedChannels.length}
+            value={dashboardData.subscribedChannels.length.toLocaleString()}
             link="/subscriptions"
             color="bg-yellow-100 dark:bg-yellow-900"
           />
         </div>
 
         <section className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
             <h2 className="text-xl font-semibold">Top Performing Videos</h2>
             <Link
               to="/videos"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
-              
               View All Videos
             </Link>
           </div>
           
-{dashboardData.dashboardVideos?.videos?.length > 0 ? (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-    {dashboardData.dashboardVideos.videos.map((video) => (
-      <div key={video.videoId}>
-        <DashboardVideoCard video={video} />
-      </div>
-    ))}
-  </div>
-) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
+          {dashboardData.dashboardVideos?.videos?.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+              {dashboardData.dashboardVideos.videos.map((video) => (
+                <div key={video.videoId} className="w-full">
+                  <DashboardVideoCard video={video} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 md:p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 You haven't uploaded any videos yet
               </p>
               <Link
-                to="/playlists/create"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                to="/upload"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base"
               >
                 <Plus size={18} className="mr-2" />
                 Upload Your First Video
@@ -328,11 +342,11 @@ const Dashboard = () => {
         </section>
 
         <section className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
             <h2 className="text-xl font-semibold">Recent Playlists</h2>
             <Link
               to="/playlists/create"
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
             >
               <Plus size={18} />
               New Playlist
@@ -340,29 +354,31 @@ const Dashboard = () => {
           </div>
           
           {dashboardData.recentPlaylists.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {dashboardData.recentPlaylists.map((playlist) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {dashboardData.recentPlaylists.slice(0, 3).map((playlist) => (
                 <PlaylistCard key={playlist._id} playlist={playlist} />
               ))}
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 md:p-8 text-center">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 You haven't created any playlists yet
               </p>
               <Link
                 to="/playlists/create"
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base"
               >
                 <Plus size={18} className="mr-2" />
                 Create Your First Playlist
               </Link>
-
-              
             </div>
           )}
         </section>
-        <LikedVideosPage user={dashboardData.user} />
+        
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Liked Videos</h2>
+          <LikedVideosPage user={dashboardData.user} />
+        </section>
       </main>
     </div>
   );
@@ -372,14 +388,17 @@ const DashboardCard = ({ icon, title, value, link, color }) => {
   return (
     <Link
       to={link}
-      className={`${color} p-6 rounded-lg shadow hover:shadow-md transition-shadow`}
+      className={`${color} p-4 md:p-6 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col justify-between h-full`}
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">{title}</p>
+          <p className="text-xl md:text-2xl font-bold">{value}</p>
         </div>
-        <span className="text-3xl">{icon}</span>
+        <span className="text-2xl md:text-3xl">{icon}</span>
+      </div>
+      <div className="mt-2 text-xs text-blue-600 dark:text-blue-400 font-medium">
+        View details →
       </div>
     </Link>
   );
@@ -407,34 +426,36 @@ const PlaylistCard = ({ playlist }) => {
 
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow cursor-pointer"
+      className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
       onClick={() => navigate(`/playlists/${playlist._id}`)}
     >
-      <div className="p-4">
-        <div className="flex items-center mb-3">
-          <span className="text-2xl mr-3">{playlist.icon || "📁"}</span>
-          <h3 className="text-lg font-semibold truncate">{playlist.name}</h3>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">
-          {playlist.description || "No description"}
-        </p>
-      </div>
-
       {playlist.videos?.length > 0 && (
         <div className="relative h-40 bg-gray-100 dark:bg-gray-700">
           <img
             src={getThumbnail()}
             alt="Playlist thumbnail"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = "/default-thumbnail.jpg";
+            }}
           />
           <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-            {playlist.videos.length} videos
+            {playlist.videos.length} video{playlist.videos.length !== 1 ? 's' : ''}
           </div>
         </div>
       )}
+      
+      <div className="p-4 flex-grow">
+        <div className="flex items-center mb-2">
+          <span className="text-xl mr-2">{playlist.icon || "📁"}</span>
+          <h3 className="text-lg font-semibold truncate">{playlist.name}</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+          {playlist.description || "No description"}
+        </p>
+      </div>
     </div>
   );
 };
-
 
 export default Dashboard;

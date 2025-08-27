@@ -163,7 +163,6 @@ const HistoryPage = () => {
         className="absolute top-0 left-0 w-full h-full pointer-cursor"
         muted
         playsInline
-        poster={video?.thumbnailUrl || "/default-thumbnail.png"}
         onMouseEnter={(e) => e.target.play()}
         onMouseLeave={(e) => {
           e.target.pause();

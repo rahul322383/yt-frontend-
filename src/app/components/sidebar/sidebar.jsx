@@ -1,4 +1,3 @@
-
 /* eslint-disable no-unused-vars */
 "use client";
 
@@ -37,15 +36,14 @@ import { AuthContext } from "../../../context/AuthContext";
 import API from "../../../utils/axiosInstance.jsx";
 
 const Sidebar = () => {
-  const location = useLocation();
+ const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔑 Get auth + logout from context
   const { auth, logout } = useContext(AuthContext);
-  
+
   // Fetch user data
   const fetchUserData = async () => {
     if (!auth?.isAuthenticated) {
@@ -85,14 +83,17 @@ const Sidebar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  // ✅ Base nav items (public)
+  // Public nav items
   const publicNav = [
     { to: "/", label: "Home", icon: Home },
     { to: "/trending", label: "Trending", icon: Flame },
-    { to: "/subscriptions", label: "Subscriptions", icon: Tv },
+   { to: "/subscriptions", label: "Subscriptions", icon: Tv },
   ];
 
-  // ✅ Private nav items (only if logged in)
+  // Explore nav for non-logged-in users (includes Trending)
+  
+
+  // Private nav items (logged-in users)
   const privateNav = [
     {
       title: "You",
@@ -104,15 +105,8 @@ const Sidebar = () => {
         { to: "/liked-videos", label: "Liked videos", icon: ThumbsUp },
         { to: "/videos", label: "Your videos", icon: PlaySquare },
         { to: "/analytics", label: "Analytics", icon: Folder },
-   { to: "/views", label: "Views", icon: Eye },
-    { to: "/AnalyticsSection", label: "Analytics Reports", icon: BarChart2 }
-      ]
-    },
-    {
-      title: "Explore",
-      items: [
-        { to: "/shorts", label: "Shorts", icon: Film },
-        { to: "/subscriptions", label: "Subscriptions", icon: Tv },
+        { to: "/views", label: "Views", icon: Eye },
+        { to: "/AnalyticsSection", label: "Analytics Reports", icon: BarChart2 },
       ]
     },
     {
@@ -123,7 +117,6 @@ const Sidebar = () => {
         { to: "/about", label: "About", icon: Youtube },
         { to: "/help", label: "Help", icon: HelpCircle },
         { to: "/privacy-policy", label: "Privacy Policy", icon: Lock },
-        
       ]
     }
   ];
@@ -149,9 +142,7 @@ const Sidebar = () => {
           x: isMobile && !isCollapsed ? 0 : isMobile ? -250 : 0 
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`h-screen bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 flex flex-col transition-all duration-300 fixed md:relative z-50 ${
-          isCollapsed ? "w-16 md:w-16" : "w-60"
-        }`}
+        className={`h-screen bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-gray-100 flex flex-col transition-all duration-300 fixed md:relative z-50 ${isCollapsed ? "w-16 md:w-16" : "w-60"}`}
       >
         {/* Top Logo Section */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-800">
@@ -195,20 +186,14 @@ const Sidebar = () => {
                 />
                 {!isCollapsed && (
                   <div>
-                    <p className="font-medium text-sm">
-                      {userData.fullName || "Your Name"}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      @{userData.username || "username"}
-                    </p>
+                    <p className="font-medium text-sm">{userData.fullName || "Your Name"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">@{userData.username || "username"}</p>
                   </div>
                 )}
               </div>
             ) : (
               !isCollapsed && (
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  User data not available
-                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">User data not available</div>
               )
             )}
           </div>
@@ -231,14 +216,8 @@ const Sidebar = () => {
                     data-tooltip-id={`tooltip-${label}`}
                     data-tooltip-content={label}
                   >
-                    <Icon 
-                      size={22} 
-                      className="flex-shrink-0" 
-                      strokeWidth={isActive(to) ? 2.5 : 2}
-                    />
-                    {!isCollapsed && (
-                      <span className="truncate transition-opacity">{label}</span>
-                    )}
+                    <Icon size={22} className="flex-shrink-0" strokeWidth={isActive(to) ? 2.5 : 2} />
+                    {!isCollapsed && <span className="truncate transition-opacity">{label}</span>}
                   </Link>
                   {isCollapsed && <Tooltip id={`tooltip-${label}`} place="right" />}
                 </li>
@@ -246,10 +225,19 @@ const Sidebar = () => {
             </ul>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
+          {/* Explore for non-logged users */}
+          {!auth?.isAuthenticated && (
+            <div className="mb-4">
+              {!isCollapsed && (
+                <p className="text-xs px-4 py-2 text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
+                  Explore
+                </p>
+              )}
 
-          {/* Private nav (only if logged in) */}
+            </div>
+          )}
+
+          {/* Private nav for logged-in users */}
           {auth?.isAuthenticated && (
             <>
               {privateNav.map((group, index) => (
@@ -272,24 +260,14 @@ const Sidebar = () => {
                           data-tooltip-id={`tooltip-${label}`}
                           data-tooltip-content={label}
                         >
-                          <Icon 
-                            size={22} 
-                            className="flex-shrink-0" 
-                            strokeWidth={isActive(to) ? 2.5 : 2}
-                          />
-                          {!isCollapsed && (
-                            <span className="truncate transition-opacity">{label}</span>
-                          )}
+                          <Icon size={22} className="flex-shrink-0" strokeWidth={isActive(to) ? 2.5 : 2} />
+                          {!isCollapsed && <span className="truncate transition-opacity">{label}</span>}
                         </Link>
                         {isCollapsed && <Tooltip id={`tooltip-${label}`} place="right" />}
                       </li>
                     ))}
                   </ul>
-                  
-                  {/* Add divider after first section */}
-                  {index === 0 && !isCollapsed && (
-                    <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
-                  )}
+                  {index === 0 && !isCollapsed && <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>}
                 </div>
               ))}
             </>

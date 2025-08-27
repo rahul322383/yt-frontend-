@@ -22,15 +22,8 @@ import {
   Twitter,
   Linkedin,
   Instagram,
-  Globe2,
   Plus,
   X,
-  Check,
-  Star,
-  Bookmark,
-  Briefcase,
-  Award,
-  Languages,
 } from "lucide-react";
 import API from "../../utils/axiosInstance";
 
@@ -104,6 +97,7 @@ export default function ProfilePage() {
   const [newSkill, setNewSkill] = useState("");
   const [newInterest, setNewInterest] = useState("");
   const [skillLevel, setSkillLevel] = useState(50);
+  const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -168,16 +162,50 @@ export default function ProfilePage() {
     setEditingField(editingField === field ? null : field);
   };
 
-  const handleAvatarUpload = (url) => {
-    setValue("avatar", url);
-    setRefreshKey((prev) => prev + 1);
-    toast.success("Avatar uploaded successfully");
+  const handleAvatarUpload = async (file) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      
+      const { data } = await API.post("/users/upload-avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      
+      setValue("avatar", data.data.avatarUrl);
+      setRefreshKey((prev) => prev + 1);
+      toast.success("Avatar uploaded successfully");
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast.error(error.response?.data?.message || "Avatar upload failed");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleCoverUpload = (url) => {
-    setValue("coverImage", url);
-    setRefreshKey((prev) => prev + 1);
-    toast.success("Cover photo updated");
+  const handleCoverUpload = async (file) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("coverImage", file);
+      
+      const { data } = await API.post("/users/upload-cover", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      
+      setValue("coverImage", data.data.coverUrl);
+      setRefreshKey((prev) => prev + 1);
+      toast.success("Cover photo updated");
+    } catch (error) {
+      console.error("Cover upload error:", error);
+      toast.error(error.response?.data?.message || "Cover upload failed");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const addSkill = () => {
@@ -256,251 +284,226 @@ export default function ProfilePage() {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
+          {/* Profile Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="border shadow-sm rounded-xl overflow-hidden bg-background/50 backdrop-blur-sm">
-              <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-72 bg-gradient-to-r from-primary/10 to-secondary/10">
+            <Card className="border shadow-sm rounded-xl bg-background/50 backdrop-blur-sm overflow-hidden">
+              
+              {/* Cover Image */}
+              <div className="relative w-full h-56 sm:h-64 md:h-72 lg:h-80 bg-gradient-to-r from-primary/10 to-secondary/10">
                 <CoverUpload
                   key={`cover-${refreshKey}`}
-                  coverUrl={profile?.coverImage}
+                  coverUrl={watch("coverImage") || profile?.coverImage}
                   onUpload={handleCoverUpload}
+                  isUploading={isUploading}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               </div>
-              
-              <div className="relative px-4 sm:px-6">
-                <div className="flex -mt-16 sm:-mt-20 z-10">
-                  <AvatarUpload
-                    key={`avatar-${refreshKey}`}
-                    avatarUrl={profile?.avatar} 
-                    onUpload={handleAvatarUpload}
-                    className="border-4 border-background rounded-full shadow-lg w-32 h-32 sm:w-40 sm:h-40"
-                  />
-                </div>
 
-                <CardHeader className="pb-4 pt-6 px-0">
-                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                    <div>
-                      <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">
-                        {profile?.name || "Your Profile"}
-                      </CardTitle>
-                      <CardDescription className="text-sm sm:text-base text-muted-foreground">
-                        @{profile?.username || "username"}
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="rounded-full">
-                        Share Profile
-                      </Button>
-                      <Button size="sm" className="rounded-full">
-                        Follow
-                      </Button>
-                    </div>
+              {/* Avatar */}
+              <div className="relative px-6 -mt-20 sm:-mt-24 z-10 flex items-start">
+                <AvatarUpload
+                  key={`avatar-${refreshKey}`}
+                  avatarUrl={watch("avatar") || profile?.avatar}
+                  onUpload={handleAvatarUpload}
+                  isUploading={isUploading}
+                  className="border-4 border-background rounded-full shadow-xl w-32 h-32 sm:w-40 sm:h-40"
+                />
+              </div>
+
+              {/* Profile Info */}
+              <CardHeader className="px-6 pt-4 pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      {watch("name") || profile?.name || "Your Profile"}
+                    </CardTitle>
+                    <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                      @{watch("username") || profile?.username || "username"}
+                    </CardDescription>
                   </div>
-                  <CardDescription className="text-sm sm:text-base text-muted-foreground mt-2">
-                    {profile?.bio || "Tell us about yourself"}
-                  </CardDescription>
-                </CardHeader>
-                
-                <Separator className="mb-6 bg-border/50" />
-                
-                <CardContent className="px-0">
-                  <form className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-                      <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                        {["name", "username", "email", "bio", "location", "website"].map((field) => (
-                          <div key={field} className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
-                            <Label 
-                              htmlFor={field} 
-                              className="sm:text-right capitalize sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
-                            >
-                              {fieldIcons[field]}
-                              <span className="hidden sm:inline">{field}</span>
-                            </Label>
-                            <div className="sm:col-span-2 space-y-1">
-                              {field === "bio" ? (
-                                <textarea
-                                  id={field}
-                                  {...register(field)}
-                                  defaultValue={watch(field) || ""}
-                                  readOnly={editingField !== field}
-                                  className={`w-full min-h-[100px] rounded-lg border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${
-                                    editingField === field ? 'ring-2 ring-primary bg-background shadow-sm' : 'bg-muted/20'
-                                  } ${!watch(field) ? 'text-muted-foreground italic' : ''}`}
-                                  placeholder={!watch(field) ? `Add your ${field}...` : ''}
-                                />
-                              ) : (
-                                <Input
-                                  id={field}
-                                  {...register(field)}
-                                  defaultValue={watch(field) || ""}
-                                  readOnly={editingField !== field}
-                                  className={`rounded-lg transition-all ${
-                                    editingField === field ? 'ring-2 ring-primary bg-background shadow-sm' : 'bg-muted/20'
-                                  } ${!watch(field) ? 'text-muted-foreground italic' : ''}`}
-                                  placeholder={!watch(field) ? `Add your ${field}...` : ''}
-                                />
-                              )}
-                              {errors[field] && (
-                                <p className="text-sm text-destructive mt-1">
-                                  {errors[field].message}
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              type="button"
-                              variant={editingField === field ? "secondary" : "outline"}
-                              size="sm"
-                              onClick={() => handleFieldEdit(field)}
-                              className="sm:col-span-1 w-full sm:w-auto h-9"
-                            >
-                              {editingField === field ? "Cancel" : watch(field) ? "Edit" : "Add"}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="flex gap-2 mt-4 sm:mt-0">
+                    <Button variant="outline" size="sm" className="rounded-full">
+                      Share Profile
+                    </Button>
+                    <Button size="sm" className="rounded-full">
+                      Follow
+                    </Button>
+                  </div>
+                </div>
+                <CardDescription className="text-sm sm:text-base text-muted-foreground mt-2">
+                  {watch("bio") || profile?.bio || "Tell us about yourself"}
+                </CardDescription>
+              </CardHeader>
 
-                      <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-                        <Card className="border shadow-sm rounded-xl bg-background/50 backdrop-blur-sm">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                              <ShieldCheck className="w-5 h-5 text-primary" />
-                              Profile Stats
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
-                              <span className="text-sm text-muted-foreground flex items-center">
-                                <Calendar className="w-4 h-4 mr-2" />
-                                Member since
-                              </span>
-                              <span className="text-sm font-medium">
-                                {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
-                              <span className="text-sm text-muted-foreground">
-                                Last updated
-                              </span>
-                              <span className="text-sm font-medium">
-                                {profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : "N/A"}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
+              <Separator className="my-4 bg-border/50" />
 
-                        <div className="space-y-3">
-                          <Label className="text-sm font-medium flex items-center gap-2">
-                            <Lock className="w-4 h-4" />
-                            Account Status
+              {/* Editable Form */}
+              <CardContent className="px-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                    
+                    {/* Left: Profile Fields */}
+                    <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                      {["name", "username", "email", "bio", "location", "website"].map((field) => (
+                        <div key={field} className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
+                          <Label 
+                            htmlFor={field} 
+                            className="sm:text-right capitalize sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground gap-1"
+                          >
+                            {fieldIcons[field]}
+                            <span className="hidden sm:inline">{field}</span>
                           </Label>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge 
-                              variant={profile?.verified ? "default" : "outline"} 
-                              className="text-xs sm:text-sm px-3 py-1 rounded-lg"
-                            >
-                              {profile?.verified ? (
-                                <span className="flex items-center gap-1.5">
-                                  <ShieldCheck className="w-3.5 h-3.5" />
-                                  Verified
-                                </span>
-                              ) : "Not Verified"}
+                          <div className="sm:col-span-2 space-y-1">
+                            {field === "bio" ? (
+                              <textarea
+                                id={field}
+                                {...register(field)}
+                                defaultValue={watch(field) || profile?.[field] || ""}
+                                readOnly={editingField !== field}
+                                className={`w-full min-h-[100px] rounded-lg border border-input px-4 py-2 text-sm transition-all placeholder:text-muted-foreground ${
+                                  editingField === field ? 'ring-2 ring-primary bg-background shadow-sm' : 'bg-muted/20'
+                                } ${!watch(field) && !profile?.[field] ? 'text-muted-foreground italic' : ''}`}
+                                placeholder={!watch(field) && !profile?.[field] ? `Add your ${field}...` : ''}
+                              />
+                            ) : (
+                              <Input
+                                id={field}
+                                type={field === "email" ? "email" : "text"}
+                                {...register(field)}
+                                defaultValue={watch(field) || profile?.[field] || ""}
+                                readOnly={editingField !== field}
+                                className={`rounded-lg transition-all ${
+                                  editingField === field ? 'ring-2 ring-primary bg-background shadow-sm' : 'bg-muted/20'
+                                } ${!watch(field) && !profile?.[field] ? 'text-muted-foreground italic' : ''}`}
+                                placeholder={!watch(field) && !profile?.[field] ? `Add your ${field}...` : ''}
+                              />
+                            )}
+                            {errors[field] && (
+                              <p className="text-sm text-destructive mt-1">{errors[field].message}</p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant={editingField === field ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={() => handleFieldEdit(field)}
+                            className="sm:col-span-1 w-full sm:w-auto h-9"
+                          >
+                            {editingField === field ? "Cancel" : (watch(field) || profile?.[field]) ? "Edit" : "Add"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Right: Stats */}
+                    <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+                      <Card className="border shadow-sm rounded-xl bg-background/50 backdrop-blur-sm">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-primary" />
+                            Profile Stats
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                            <span className="text-sm text-muted-foreground flex items-center">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Member since
+                            </span>
+                            <span className="text-sm font-medium">
+                              {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                            <span className="text-sm text-muted-foreground">
+                              Last updated
+                            </span>
+                            <span className="text-sm font-medium">
+                              {profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : "N/A"}
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <Lock className="w-4 h-4" />
+                              Account Status
+                            </Label>
+                            <Badge variant={profile?.verified ? "default" : "outline"} className="text-xs sm:text-sm px-3 py-1 rounded-lg">
+                              {profile?.verified ? "Verified" : "Not Verified"}
                             </Badge>
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                  </form>
-                </CardContent>
-                
-                <Separator className="my-4 sm:my-6 bg-border/50" />
-                
-                <CardFooter className="px-0 pb-0 flex flex-col sm:flex-row justify-between gap-3 sm:gap-4">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigate("/settings")}
-                    className="w-full sm:w-auto order-2 sm:order-1"
-                  >
-                    Back to Settings
-                  </Button>
-                  <div className="flex gap-3 w-full sm:w-auto order-1 sm:order-2">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => setEditingField(null)}
-                      className="w-full"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      onClick={handleSubmit(onSubmit)}
-                      disabled={isSubmitting}
-                      className="w-full"
-                    >
+
+                  </div>
+                  
+                  {/* Save Button for Profile Tab */}
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <span className="flex items-center">
                           <Loader2 className="animate-spin mr-2 h-4 w-4" />
                           Saving...
                         </span>
-                      ) : "Save Changes"}
+                      ) : "Save Profile"}
                     </Button>
                   </div>
-                </CardFooter>
-              </div>
+                </form>
+              </CardContent>
             </Card>
           </motion.div>
 
+          {/* Security Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
             <Card className="border shadow-sm rounded-xl bg-background/50 backdrop-blur-sm">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-4 px-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-primary/10">
                     <Lock className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">
-                      Security
-                    </CardTitle>
-                    <CardDescription className="text-sm sm:text-base">
+                    <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight">Security</CardTitle>
+                    <CardDescription className="text-sm sm:text-base text-muted-foreground">
                       Manage your account security settings
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              
+
               <Separator className="mb-4 sm:mb-6 bg-border/50" />
-              
-              <CardContent className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-20 sm:h-24 flex-col gap-1.5 sm:gap-2 rounded-xl hover:bg-muted/50 transition-all"
+
+              <CardContent className="space-y-4 sm:space-y-6 px-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    className="w-full h-24 flex flex-col items-center justify-center gap-2 rounded-xl hover:bg-muted/50 transition-all"
                     onClick={() => navigate("/reset-password")}
                   >
-                    <div className="p-2.5 rounded-full bg-primary/10">
+                    <div className="p-3 rounded-full bg-primary/10 flex items-center justify-center">
                       <Lock className="w-5 h-5 text-primary" />
                     </div>
-                    <span className="text-sm sm:text-base font-medium">Reset Password</span>
-                    <span className="text-xs text-muted-foreground">Set a new password</span>
+                    <span className="text-base font-semibold">Reset Password</span>
+                    <span className="text-sm text-muted-foreground">Set a new password</span>
                   </Button>
-                  <Button 
-                    variant="default" 
-                    className="w-full h-20 sm:h-24 flex-col gap-1.5 sm:gap-2 rounded-xl bg-primary hover:bg-primary/90 transition-all"
+
+                  <Button
+                    variant="default"
+                    className="w-full h-24 flex flex-col items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary/90 transition-all"
                     onClick={() => navigate("/forget-password")}
                   >
-                    <div className="p-2.5 rounded-full bg-background/20">
-                      <ShieldCheck className="w-5 h-5" />
+                    <div className="p-3 rounded-full bg-background/20 flex items-center justify-center">
+                      <ShieldCheck className="w-5 h-5 text-primary" />
                     </div>
-                    <span className="text-sm sm:text-base font-medium">Two-Factor Auth</span>
-                    <span className="text-xs text-background/80">
+                    <span className="text-base font-semibold text-background">Two-Factor Auth</span>
+                    <span className="text-sm text-background/80">
                       {profile?.twoFactorEnabled ? "Manage 2FA" : "Enable 2FA"}
                     </span>
                   </Button>
@@ -533,65 +536,69 @@ export default function ProfilePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {["github", "twitter", "linkedin", "instagram"].map((platform) => (
-                    <div key={platform} className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
-                      <Label 
-                        htmlFor={`socialLinks.${platform}`} 
-                        className="sm:text-right capitalize sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
-                      >
-                        {socialIcons[platform]}
-                        <span className="hidden sm:inline ml-2">{platform}</span>
-                      </Label>
-                      <div className="sm:col-span-2 space-y-1">
-                        <Input
-                          id={`socialLinks.${platform}`}
-                          {...register(`socialLinks.${platform}`)}
-                          defaultValue={watch(`socialLinks.${platform}`) || ""}
-                          className="rounded-lg bg-muted/20"
-                          placeholder={`https://${platform}.com/username`}
-                        />
-                        {errors.socialLinks?.[platform] && (
-                          <p className="text-sm text-destructive mt-1">
-                            {errors.socialLinks[platform].message}
-                          </p>
-                        )}
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="space-y-6">
+                    {["github", "twitter", "linkedin", "instagram"].map((platform) => (
+                      <div key={platform} className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
+                        <Label 
+                          htmlFor={`socialLinks.${platform}`} 
+                          className="sm:text-right capitalize sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
+                        >
+                          {socialIcons[platform]}
+                          <span className="hidden sm:inline ml-2">{platform}</span>
+                        </Label>
+                        <div className="sm:col-span-2 space-y-1">
+                          <Input
+                            id={`socialLinks.${platform}`}
+                            {...register(`socialLinks.${platform}`)}
+                            defaultValue={watch(`socialLinks.${platform}`) || profile?.socialLinks?.[platform] || ""}
+                            className="rounded-lg bg-muted/20"
+                            placeholder={`https://${platform}.com/username`}
+                          />
+                          {errors.socialLinks?.[platform] && (
+                            <p className="text-sm text-destructive mt-1">
+                              {errors.socialLinks[platform].message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="sm:col-span-1">
+                          {watch(`socialLinks.${platform}`) || profile?.socialLinks?.[platform] ? (
+                            <Button 
+                              type="button"
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full sm:w-auto h-9"
+                              onClick={() => window.open(watch(`socialLinks.${platform}`) || profile?.socialLinks?.[platform], '_blank')}
+                            >
+                              Visit Profile
+                            </Button>
+                          ) : (
+                            <Button 
+                              type="button"
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full sm:w-auto h-9 text-muted-foreground"
+                              disabled
+                            >
+                              Not Connected
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="sm:col-span-1">
-                        {watch(`socialLinks.${platform}`) ? (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full sm:w-auto h-9"
-                            onClick={() => window.open(watch(`socialLinks.${platform}`), '_blank')}
-                          >
-                            Visit Profile
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full sm:w-auto h-9 text-muted-foreground"
-                            disabled
-                          >
-                            Not Connected
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  <CardFooter className="flex justify-end px-0 pt-6 pb-0">
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                          Saving...
+                        </span>
+                      ) : "Save Social Links"}
+                    </Button>
+                  </CardFooter>
+                </form>
               </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                      Saving...
-                    </span>
-                  ) : "Save Social Links"}
-                </Button>
-              </CardFooter>
             </Card>
           </motion.div>
         </TabsContent>
@@ -619,104 +626,108 @@ export default function ProfilePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
-                    <Label 
-                      htmlFor="interests" 
-                      className="sm:text-right sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
-                    >
-                      <Heart className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Add Interest</span>
-                    </Label>
-                    <div className="sm:col-span-2 space-y-1">
-                      <div className="flex gap-2">
-                        <Command className="rounded-lg border w-full">
-                          <CommandInput 
-                            placeholder="Search interests..." 
-                            value={newInterest}
-                            onValueChange={setNewInterest}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No interests found.</CommandEmpty>
-                            <CommandGroup>
-                              {allInterests
-                                .filter(i => !watch("interests")?.includes(i))
-                                .filter(i => i.toLowerCase().includes(newInterest.toLowerCase()))
-                                .map((interest) => (
-                                  <CommandItem 
-                                    key={interest}
-                                    onSelect={() => {
-                                      setNewInterest(interest);
-                                      addInterest();
-                                    }}
-                                    className="cursor-pointer"
-                                  >
-                                    {interest}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
+                      <Label 
+                        htmlFor="interests" 
+                        className="sm:text-right sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
+                      >
+                        <Heart className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Add Interest</span>
+                      </Label>
+                      <div className="sm:col-span-2 space-y-1">
+                        <div className="flex gap-2">
+                          <Command className="rounded-lg border w-full">
+                            <CommandInput 
+                              placeholder="Search interests..." 
+                              value={newInterest}
+                              onValueChange={setNewInterest}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No interests found.</CommandEmpty>
+                              <CommandGroup>
+                                {allInterests
+                                  .filter(i => !watch("interests")?.includes(i))
+                                  .filter(i => i.toLowerCase().includes(newInterest.toLowerCase()))
+                                  .map((interest) => (
+                                    <CommandItem 
+                                      key={interest}
+                                      onSelect={() => {
+                                        setNewInterest(interest);
+                                        addInterest();
+                                      }}
+                                      className="cursor-pointer"
+                                    >
+                                      {interest}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                          <Button 
+                            type="button" 
+                            onClick={addInterest}
+                            disabled={!newInterest.trim()}
+                            className="h-10"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="sm:col-span-1">
                         <Button 
-                          type="button" 
-                          onClick={addInterest}
-                          disabled={!newInterest.trim()}
-                          className="h-10"
+                          type="button"
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full sm:w-auto h-9"
+                          onClick={() => setActiveTab("profile")}
                         >
-                          <Plus className="w-4 h-4" />
+                          Back to Profile
                         </Button>
                       </div>
                     </div>
-                    <div className="sm:col-span-1">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full sm:w-auto h-9"
-                        onClick={() => setActiveTab("profile")}
-                      >
-                        Back to Profile
-                      </Button>
+
+                    <div className="flex flex-wrap gap-2">
+                      <AnimatePresence>
+                        {watch("interests")?.map((interest) => (
+                          <motion.div
+                            key={interest}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Badge 
+                              variant="outline" 
+                              className="px-3 py-1 rounded-full text-sm flex items-center gap-1.5"
+                            >
+                              {interest}
+                              <button 
+                                type="button"
+                                onClick={() => removeInterest(interest)}
+                                className="text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </Badge>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <AnimatePresence>
-                      {watch("interests")?.map((interest) => (
-                        <motion.div
-                          key={interest}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Badge 
-                            variant="outline" 
-                            className="px-3 py-1 rounded-full text-sm flex items-center gap-1.5"
-                          >
-                            {interest}
-                            <button 
-                              onClick={() => removeInterest(interest)}
-                              className="text-muted-foreground hover:text-destructive transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </Badge>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </div>
+                  <CardFooter className="flex justify-end px-0 pt-6 pb-0">
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                          Saving...
+                        </span>
+                      ) : "Save Interests"}
+                    </Button>
+                  </CardFooter>
+                </form>
               </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                      Saving...
-                    </span>
-                  ) : "Save Interests"}
-                </Button>
-              </CardFooter>
             </Card>
           </motion.div>
         </TabsContent>
@@ -744,102 +755,105 @@ export default function ProfilePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
-                    <Label 
-                      htmlFor="skills" 
-                      className="sm:text-right sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
-                    >
-                      <Code className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Add Skill</span>
-                    </Label>
-                    <div className="sm:col-span-3 space-y-2">
-                      <div className="flex gap-2">
-                        <Command className="rounded-lg border w-full">
-                          <CommandInput 
-                            placeholder="Search skills..." 
-                            value={newSkill}
-                            onValueChange={setNewSkill}
-                          />
-                          <CommandList>
-                            <CommandEmpty>No skills found.</CommandEmpty>
-                            <CommandGroup>
-                              {allSkills
-                                .filter(s => !watch("skills")?.some(skill => skill.name.toLowerCase() === s.toLowerCase()))
-                                .filter(s => s.toLowerCase().includes(newSkill.toLowerCase()))
-                                .map((skill) => (
-                                  <CommandItem 
-                                    key={skill}
-                                    onSelect={() => {
-                                      setNewSkill(skill);
-                                    }}
-                                    className="cursor-pointer"
-                                  >
-                                    {skill}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <ProgressLabelCard value={skillLevel} className="h-2" />
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-3 sm:gap-4">
+                      <Label 
+                        htmlFor="skills" 
+                        className="sm:text-right sm:col-span-1 pt-2 text-sm font-medium flex items-center text-muted-foreground"
+                      >
+                        <Code className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Add Skill</span>
+                      </Label>
+                      <div className="sm:col-span-3 space-y-2">
+                        <div className="flex gap-2">
+                          <Command className="rounded-lg border w-full">
+                            <CommandInput 
+                              placeholder="Search skills..." 
+                              value={newSkill}
+                              onValueChange={setNewSkill}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No skills found.</CommandEmpty>
+                              <CommandGroup>
+                                {allSkills
+                                  .filter(s => !watch("skills")?.some(skill => skill.name.toLowerCase() === s.toLowerCase()))
+                                  .filter(s => s.toLowerCase().includes(newSkill.toLowerCase()))
+                                  .map((skill) => (
+                                    <CommandItem 
+                                      key={skill}
+                                      onSelect={() => {
+                                        setNewSkill(skill);
+                                      }}
+                                      className="cursor-pointer"
+                                    >
+                                      {skill}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
                         </div>
-                        <span className="text-sm text-muted-foreground w-12">
-                          {skillLevel}%
-                        </span>
-                        <Button 
-                          type="button" 
-                          onClick={addSkill}
-                          disabled={!newSkill.trim()}
-                          className="h-10"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <ProgressLabelCard value={skillLevel} className="h-2" />
+                          </div>
+                          <span className="text-sm text-muted-foreground w-12">
+                            {skillLevel}%
+                          </span>
+                          <Button 
+                            type="button" 
+                            onClick={addSkill}
+                            disabled={!newSkill.trim()}
+                            className="h-10"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    {watch("skills")?.map((skill, index) => (
-                      <motion.div
-                        key={skill.name}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex items-center gap-4"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">{skill.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {skill.level}%
-                            </span>
-                          </div>
-                          <ProgressLabelCard value={skill.level} className="h-2" />
-                        </div>
-                        <button 
-                          onClick={() => removeSkill(index)}
-                          className="text-muted-foreground hover:text-destructive transition-colors p-2"
+                    <div className="space-y-4">
+                      {watch("skills")?.map((skill, index) => (
+                        <motion.div
+                          key={skill.name}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex items-center gap-4"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </motion.div>
-                    ))}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">{skill.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {skill.level}%
+                              </span>
+                            </div>
+                            <ProgressLabelCard value={skill.level} className="h-2" />
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => removeSkill(index)}
+                            className="text-muted-foreground hover:text-destructive transition-colors p-2"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                  <CardFooter className="flex justify-end px-0 pt-6 pb-0">
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                          Saving...
+                        </span>
+                      ) : "Save Skills"}
+                    </Button>
+                  </CardFooter>
+                </form>
               </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                      Saving...
-                    </span>
-                  ) : "Save Skills"}
-                </Button>
-              </CardFooter>
             </Card>
           </motion.div>
         </TabsContent>

@@ -31,7 +31,7 @@ const ChannelAvatar = ({ src, username }) => {
         alt={`${username}'s avatar`}
         className={`w-8 h-8 rounded-full object-cover ${loaded ? "block" : "hidden"}`}
         onLoad={() => setLoaded(true)}
-        loading="lazy"
+       
       />
     </>
   );
@@ -46,7 +46,8 @@ const VideoCard = ({
 }) => {
   const [hover, setHover] = useState(false);
   const [muted, setMuted] = useState(true);
-  const isWatchLater = watchLaterList.includes(video._id);
+const isWatchLater = watchLaterList.some((id) => id.toString() === video._id.toString());
+
 
   return (
     <div
@@ -56,14 +57,16 @@ const VideoCard = ({
       onClick={() => onVideoClick(video)}
     >
       {/* Video Preview */}
-      <div className="relative w-full aspect-video bg-black">
+      <div className="relative w-full aspect-video ">
         <video
-          src={video.videoUrl}
-          className="absolute w-full h-full"
-          muted={muted}
-          loop
-          playsInline
-        />
+  src={video.videoUrl}
+  className="absolute w-full h-full"
+  muted={muted}
+  loop
+  playsInline
+  autoPlay={hover}
+/>
+
         <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
           <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
             <FiPlay className="text-white text-xl ml-1" />
@@ -90,18 +93,19 @@ const VideoCard = ({
             <h3 className="text-lg font-semibold line-clamp-2 dark:text-white mb-1">
               {video.title}
             </h3>
-            <div className="flex items-center gap-2 text-sm text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white">
-              <ChannelAvatar
-                src={video.owner?.avatar}
-                username={video.owner?.username}
-              />
-              <span className="truncate max-w-[120px]">
-                {video.owner?.username}
-              </span>
-            </div>
+           <div
+  onClick={(e) => {
+    e.stopPropagation();
+    onChannelClick(video);
+  }}
+  className="flex items-center gap-2 cursor-pointer"
+>
+  <ChannelAvatar src={video.owner?.avatar} username={video.owner?.username} />
+  <span className="truncate max-w-[120px]">{video.owner?.username}</span>
+</div>
+
           </div>
           <div className="flex gap-2 items-center">
-            {/* <LikeButton videoId={video._id} initialLikes={video.likeCount} /> */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -191,12 +195,7 @@ const Video = () => {
   };
 
   const handleVideoClick = (video) => {
-    // if (video.playlistId?.[0]) {
-    //   navigate(`/playlists/${video.playlistId[0]}`);
-    // } else {
-    //   setSelectedVideo(video);
       navigate(`/video/${video._id}`);
-    // }
   };
 
   const handleChannelClick = (video) => {
@@ -227,7 +226,8 @@ const Video = () => {
             className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
             aria-label="Toggle dark mode"
           >
-            {darkMode ? "🌙" : "☀️"}
+           {darkMode ? "☀️" : "🌙"}
+
           </button>
         </div>
       </div>

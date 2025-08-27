@@ -24,7 +24,7 @@ export default function ContactPage() {
 
   const onSubmit = async (data) => {
     try {
-      // Simulate API call with random success/failure
+     
       const isSuccess = Math.random() > 0.2; // 80% success rate
       
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -128,7 +128,7 @@ export default function ContactPage() {
           </form>
           
           <div className="mt-8 text-center text-sm text-gray-500">
-            <p>Alternatively, email us at <a href="mailto:support@example.com" className="text-indigo-600 hover:text-indigo-500">support@example.com</a></p>
+            <p>Alternatively, email us at <a href="mailto:abc350949@gamil.com" className="text-indigo-600 hover:text-indigo-500">abc350949@gamil.com</a></p>
           </div>
         </div>
       </div>

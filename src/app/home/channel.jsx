@@ -11,7 +11,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import LoadingSpinner from "../components/common/loadingSpinner.jsx";
 import SubscriptionButton from "../components/VideoCard/SubscriptionButton.jsx";
-import ShareCard from "../components/VideoCard/ShareCard.jsx";
+import ShareButton from "../components/VideoCard/ShareCard.jsx";
 import "../../index.css";
 
 const tabVariants = {
@@ -207,34 +207,32 @@ const ChannelPage = () => {
             )}
           </div>
 
-            <div className="flex gap-3 items-center"> 
-            <div className="flex gap-3 items-center">
-  <SubscriptionButton
-    channelId={channel.channelId}
-    isSubscribedInitially={isSubscribed}
-    isNotifiedInitially={notificationPref === "all"}
-    subscriberCount={subscribers.total}
-    onSubscribedChange={(newStatus) => {
-      setIsSubscribed(newStatus);
-      if (!newStatus) setNotificationPref("none");
-    }}
-    onNotificationChange={(newPref) => setNotificationPref(newPref)}
-  />
+          <div className="flex gap-3 items-center">
+            <SubscriptionButton
+              channelId={channelId}
+              isSubscribedInitially={isSubscribed}
+              isNotifiedInitially={notificationPref === "all"}
+              subscriberCount={subscribers.total}
+              onSubscribedChange={(newStatus) => {
+                setIsSubscribed(newStatus);
+                if (!newStatus) setNotificationPref("none");
+              }}
+              onNotificationChange={(newPref) => setNotificationPref(newPref)}
+            />
+             <ShareButton video={channel} />
 
-  <button
-    onClick={toggleTheme}
-    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors"
-    data-tooltip-id="theme-tooltip"
-  >
-    {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-    <ReactTooltip
-      id="theme-tooltip"
-      place="bottom"
-      content={darkMode ? "Light mode" : "Dark mode"}
-    />
-  </button>
-</div>
-
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors"
+              data-tooltip-id="theme-tooltip"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              <ReactTooltip
+                id="theme-tooltip"
+                place="bottom"
+                content={darkMode ? "Light mode" : "Dark mode"}
+              />
+            </button>
           </div>
         </div>
       </div>
@@ -260,7 +258,10 @@ const ChannelPage = () => {
               >
                 {tab.icon}
                 {tab.label}
+
+                
               </button>
+              
             ))}
           </div>
         </div>
@@ -728,7 +729,7 @@ const ChannelPage = () => {
               animate="visible"
               exit="exit"
               transition={{ duration: 0.3 }}
-              className="prose dark:prose-invert max-w-3xl"
+              className="max-w-3xl"
             >
               <h2 className="text-2xl font-bold mb-6">About {channel.username}</h2>
               
@@ -779,64 +780,6 @@ const ChannelPage = () => {
                   </ul>
                 </div>
 
-                {channel.socialLinks && Object.values(channel.socialLinks).some(link => link) && (
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3">Social Links</h3>
-                    <div className="flex gap-4">
-                      {channel.socialLinks.youtube && (
-                        <a 
-                          href={channel.socialLinks.youtube} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-red-600 dark:text-red-400 hover:underline"
-                        >
-                          YouTube
-                        </a>
-                      )}
-                      {channel.socialLinks.twitter && (
-                        <a 
-                          href={channel.socialLinks.twitter} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:underline"
-                        >
-                          Twitter
-                        </a>
-                      )}
-                      {channel.socialLinks.instagram && (
-                        <a 
-                          href={channel.socialLinks.instagram} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-pink-500 hover:underline"
-                        >
-                          Instagram
-                        </a>
-                      )}
-                      {channel.socialLinks.facebook && (
-                        <a 
-                          href={channel.socialLinks.facebook} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          Facebook
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-8">
-               <button>
-<SubscriptionButton
-  channelId={channel._id}
-  isSubscribedInitially={channel.channelIsSubscribedTo}
-  isNotifiedInitially={channel.notificationPref === "all"}
-  subscriberCount={channel.subscribersCount}
-/>
-
-               </button>
                
               </div>
             </motion.div>

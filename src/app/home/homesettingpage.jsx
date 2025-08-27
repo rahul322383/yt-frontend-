@@ -129,7 +129,8 @@ const SettingsPageHome = () => {
       }
 
       API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      const { data: user } = await API.get('/users/me');
+      const response = await API.get('/users/me');
+      const user = response.data.data; // Access the user data from the response
 
       setFormData({
         username: user.username || "",
@@ -142,10 +143,10 @@ const SettingsPageHome = () => {
         language: user.settings?.language || "en",
         timezone: user.settings?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         youtubeConnected: user.youtube?.connected || false,
-        youtubeChannel: user.youtube?.channel || null,
+        youtubeChannel: null, // Not available in the response
         autoUpload: user.youtube?.autoUpload || false,
-        defaultVisibility: user.youtube?.defaultVisibility || "private",
-        uploadQuality: user.youtube?.uploadQuality || "hd1080",
+        defaultVisibility: "private", // Not available in the response
+        uploadQuality: "hd1080", // Not available in the response
         twoFactorEnabled: user.settings?.twoFactorEnabled || false,
         backupEmail: user.settings?.backupEmail || "",
         dataExport: user.settings?.dataExport || false,
@@ -175,7 +176,8 @@ const SettingsPageHome = () => {
   const connectYouTube = async () => {
     setUiState(prev => ({ ...prev, youtubeLoading: true }));
     try {
-      const { data: { authUrl } } = await API.get('/users/connect-youtube');
+      const response = await API.get('/users/connect-youtube');
+      const authUrl = response.data.data.authUrl; // Access the authUrl from the response
       
       // Open popup window for OAuth flow
       const popup = window.open(authUrl, 'youtube_oauth', 'width=600,height=700,top=100,left=100');
@@ -204,7 +206,9 @@ const SettingsPageHome = () => {
 
   const checkYouTubeStatus = async () => {
     try {
-      const { data: user } = await API.get('/users/check-youtube-status');
+      const response = await API.get('/users/check-youtube-status');
+      const user = response.data.data; // Access the user data from the response
+      
       setFormData(prev => ({
         ...prev,
         youtubeConnected: user.youtube?.connected || false,
@@ -269,7 +273,9 @@ const SettingsPageHome = () => {
 
   const setupTwoFactorAuth = async () => {
     try {
-      const { data } = await API.post('/users/setup-2fa');
+      const response = await API.post('/users/setup-2fa');
+      const data = response.data.data; // Access the data from the response
+      
       setUiState(prev => ({
         ...prev,
         showTwoFactorSetup: true,
@@ -405,7 +411,9 @@ const SettingsPageHome = () => {
 
   const exportUserData = async () => {
     try {
-      const { data } = await API.get('/users/export');
+      const response = await API.get('/users/export');
+      const data = response.data.data; // Access the data from the response
+      
       // Create a download link for the data
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

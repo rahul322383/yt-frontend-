@@ -1,228 +1,9 @@
-// import { useEffect, useState, useRef } from "react";
-// import { Input } from "../components/ui/Input.jsx";
-// import { Search, Loader2, Video, User, Book, X } from "lucide-react";
-// import { cn } from "../../utils/cn.jsx";
-// import { useNavigate } from "react-router-dom";
-// import API from "../../utils/axiosInstance.jsx";
-// import "../../index.css";
-
-// export default function SearchBar({ placeholder = "Search...", className }) {
-//   const [query, setQuery] = useState("");
-//   const [debouncedQuery, setDebouncedQuery] = useState("");
-//   const [results, setResults] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [selectedIndex, setSelectedIndex] = useState(-1);
-//   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-
-//   const resultsRef = useRef(null);
-//   const navigate = useNavigate();
-
-//   // Debounce the input
-//   useEffect(() => {
-//     const handler = setTimeout(() => setDebouncedQuery(query.trim()), 300);
-//     return () => clearTimeout(handler);
-//   }, [query]);
-
-//   useEffect(() => {
-//     if (debouncedQuery) {
-//       fetchSearchResults(debouncedQuery);
-//     } else {
-//       setResults([]);
-//     }
-//   }, [debouncedQuery]);
-
-//   const fetchSearchResults = async (searchTerm) => {
-//     setLoading(true);
-//     try {
-//       // Replace with real API call
-//       const dummyData = {
-//         videos: [
-//           { id: "1", type: "video", title: "React Tutorial", icon: <Video size={16} /> },
-//           { id: "2", type: "video", title: "Tailwind Crash Course", icon: <Video size={16} /> },
-//         ],
-//         channels: [
-//           { id: "3", type: "channel", title: "Rahul Codes", icon: <User size={16} /> },
-//         ],
-//         playlists: [
-//           { id: "4", type: "playlist", title: "Frontend Mastery", icon: <Book size={16} /> },
-//         ],
-//       };
-
-//       const filtered = Object.entries(dummyData).flatMap(([group, items]) =>
-//         items.filter((item) =>
-//           item.title.toLowerCase().includes(searchTerm.toLowerCase())
-//         )
-//       );
-
-//       setResults(filtered);
-//       setSelectedIndex(0);
-//     } catch (err) {
-//       console.error("Search error", err);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleKeyDown = (e) => {
-//     if (!results.length) return;
-
-//     if (e.key === "ArrowDown") {
-//       setSelectedIndex((prev) => (prev + 1) % results.length);
-//     } else if (e.key === "ArrowUp") {
-//       setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
-//     } else if (e.key === "Enter" && results[selectedIndex]) {
-//       handleResultSelect(results[selectedIndex]);
-//     }
-//   };
-
-//   const handleResultSelect = (result) => {
-//     setQuery(result.title);
-//     setResults([]);
-//     setIsMobileSheetOpen(false);
-
-//     if (result.type === "video") {
-//       navigate(`/video/${result.id}`);
-//     } else if (result.type === "channel") {
-//       navigate(`/channel/${result.id}`);
-//     } else if (result.type === "playlist") {
-//       navigate(`/playlist/${result.id}`);
-//     }
-//   };
-
-//   // Outside click to close results
-//   useEffect(() => {
-//     const handleClickOutside = (e) => {
-//       if (resultsRef.current && !resultsRef.current.contains(e.target)) {
-//         setResults([]);
-//       }
-//     };
-//     document.addEventListener("mousedown", handleClickOutside);
-//     return () => document.removeEventListener("mousedown", handleClickOutside);
-//   }, []);
-
-//   return (
-//     <>
-//       {/* Desktop Search */}
-//       <div className={cn("relative w-full max-w-md hidden sm:block", className)}>
-//         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-//         <Input
-//           value={query}
-//           onChange={(e) => setQuery(e.target.value)}
-//           onKeyDown={handleKeyDown}
-//           placeholder={placeholder}
-//           className="pl-10 pr-10"
-//         />
-//         {loading && (
-//           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-//         )}
-//         {results.length > 0 && (
-//           <div
-//             ref={resultsRef}
-//             className="absolute z-50 mt-1 w-full rounded-lg border bg-white dark:bg-gray-900 p-1 shadow-xl max-h-64 overflow-y-auto"
-//           >
-//             {results.map((result, index) => (
-//               <div
-//                 key={result.id || index}
-//                 className={cn(
-//                   "flex items-center gap-2 px-3 py-2 text-sm rounded-md cursor-pointer transition-colors",
-//                   index === selectedIndex
-//                     ? "bg-blue-100 dark:bg-gray-700 text-blue-600 dark:text-blue-300"
-//                     : "hover:bg-gray-100 dark:hover:bg-gray-800"
-//                 )}
-//                 onMouseEnter={() => setSelectedIndex(index)}
-//                 onClick={() => handleResultSelect(result)}
-//               >
-//                 {result.icon}
-//                 <span>{result.title}</span>
-//                 <span className="ml-auto text-xs text-gray-400 capitalize">
-//                   {result.type}
-//                 </span>
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Mobile Search Button */}
-//       <button
-//         onClick={() => setIsMobileSheetOpen(true)}
-//         className="sm:hidden flex items-center gap-2 text-sm px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700"
-//       >
-//         <Search size={18} />
-//         <span className="text-gray-600 dark:text-gray-200">Search</span>
-//       </button>
-
-//       {/* Mobile Bottom Sheet */}
-//       {isMobileSheetOpen && (
-//         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex flex-col justify-end sm:hidden">
-//           <div className="bg-white dark:bg-gray-900 rounded-t-2xl p-4 max-h-[90%] overflow-y-auto shadow-xl">
-//             <div className="flex justify-between items-center mb-3">
-//               <span className="text-lg font-semibold">Search</span>
-//               <button
-//                 onClick={() => setIsMobileSheetOpen(false)}
-//                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-//               >
-//                 <X />
-//               </button>
-//             </div>
-
-//             <div className="relative">
-//               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-//               <Input
-//                 value={query}
-//                 onChange={(e) => setQuery(e.target.value)}
-//                 onKeyDown={handleKeyDown}
-//                 placeholder={placeholder}
-//                 autoFocus
-//                 className="pl-10 pr-10"
-//               />
-//               {loading && (
-//                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-//               )}
-//             </div>
-
-//             <div className="mt-4 space-y-1">
-//               {results.length > 0 ? (
-//                 results.map((result, index) => (
-//                   <div
-//                     key={result.id || index}
-//                     className={cn(
-//                       "flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer",
-//                       index === selectedIndex
-//                         ? "bg-blue-100 dark:bg-gray-800"
-//                         : "hover:bg-gray-100 dark:hover:bg-gray-800"
-//                     )}
-//                     onMouseEnter={() => setSelectedIndex(index)}
-//                     onClick={() => handleResultSelect(result)}
-//                   >
-//                     {result.icon}
-//                     <span>{result.title}</span>
-//                     <span className="ml-auto text-xs text-gray-400 capitalize">
-//                       {result.type}
-//                     </span>
-//                   </div>
-//                 ))
-//               ) : (
-//                 !loading && (
-//                   <div className="text-center text-gray-400 py-6 text-sm">
-//                     No results found
-//                   </div>
-//                 )
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </>
-//   );
-// }
-
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "../components/ui/input";
 import SkeletonCard from "../components/Statscard/SkeletonCard";
-import { Video, User, Book } from "lucide-react";
+import { Video, User, Book, Search, X } from "lucide-react";
 import API from "../../utils/axiosInstance";
 
 const SearchBar = () => {
@@ -236,28 +17,51 @@ const SearchBar = () => {
   const inputRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Debounced search call
   const fetchSearchResults = useCallback(async (searchTerm) => {
+    if (!searchTerm.trim()) {
+      setResults([]);
+      return;
+    }
+    
     setLoading(true);
     try {
-      const res = await API.get(`/user/playlist/search?query=${searchTerm}`);
-      const mapped = res.data.results.map((item) => {
-        let icon;
-        if (item.type === "video") icon = <Video size={16} />;
-        else if (item.type === "channel") icon = <User size={16} />;
-        else if (item.type === "playlist") icon = <Book size={16} />;
-        return { ...item, icon };
-      });
-      setResults(mapped);
+      const res = await API.get(`/user/playlist/search?query=${encodeURIComponent(searchTerm)}`);
+      
+      if (res.data && res.data.success && Array.isArray(res.data.results)) {
+        const mapped = res.data.results.map((item) => {
+          let icon;
+          let route;
+          
+          if (item.type === "video") {
+            icon = <Video size={16} className="text-blue-500" />;
+            route = `/video/${item.id}`;
+          } else if (item.type === "channel") {
+            icon = <User size={16} className="text-green-500" />;
+            route = `/channel/${item.channel || item.id}`;
+          } else if (item.type === "playlist") {
+            icon = <Book size={16} className="text-purple-500" />;
+            route = `/playlist/${item.id}`;
+          }
+          
+          return { 
+            ...item, 
+            icon,
+            route
+          };
+        });
+        setResults(mapped);
+      } else {
+        setResults([]);
+      }
       setSelectedIndex(0);
     } catch (error) {
       console.error("Search error:", error);
+      setResults([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Debounce input
   useEffect(() => {
     const delay = setTimeout(() => {
       if (query.trim()) {
@@ -265,12 +69,12 @@ const SearchBar = () => {
         setShowResults(true);
       } else {
         setResults([]);
+        setShowResults(false);
       }
     }, 300);
     return () => clearTimeout(delay);
   }, [query, fetchSearchResults]);
 
-  // Keyboard navigation
   const handleKeyDown = (e) => {
     if (!results.length) return;
 
@@ -281,19 +85,49 @@ const SearchBar = () => {
       e.preventDefault();
       setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
     } else if (e.key === "Enter") {
-      navigateTo(results[selectedIndex]);
+      e.preventDefault();
+      if (results[selectedIndex]) {
+        navigateTo(results[selectedIndex]);
+      } else if (query.trim()) {
+        // Navigate to search results page if no item is selected
+        navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+        setShowResults(false);
+      }
+    } else if (e.key === "Escape") {
+      setShowResults(false);
     }
   };
 
   const navigateTo = (item) => {
     if (!item) return;
-    if (item.type === "video") navigate(`/video/${item.id}`);
-    else if (item.type === "channel") navigate(`/channel/${item.channelId }`);
-    else if (item.type === "playlist") navigate(`/playlist/${item.id}`);
+    
+    if (item.route) {
+      navigate(item.route);
+    } else if (item.type === "video") {
+      navigate(`/video/${item.id}`);
+    } else if (item.type === "channel") {
+      navigate(`/channel/${item.channel || item.id}`);
+    } else if (item.type === "playlist") {
+      navigate(`/playlist/${item.id}`);
+    }
+    
     setShowResults(false);
+    setQuery("");
   };
 
-  // Close dropdown when clicked outside
+  const clearSearch = () => {
+    setQuery("");
+    setResults([]);
+    setShowResults(false);
+    inputRef.current?.focus();
+  };
+
+  const handleInputFocus = () => {
+    if (query.trim() || results.length > 0) {
+      setShowResults(true);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -304,45 +138,126 @@ const SearchBar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const formatSubscribers = (count) => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M subscribers`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K subscribers`;
+    }
+    return `${count} subscriber${count !== 1 ? 's' : ''}`;
+  };
+
   return (
-    <div className="relative w-full md:w-96" ref={containerRef}>
-      <Input
-        ref={inputRef}
-        type="text"
-        placeholder="Search videos, channels, playlists..."
-        className="rounded-lg px-8 py-2 text-sm"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={() => query.trim() && setShowResults(true)}
-      />
+    <div className="relative w-full max-w-2xl" ref={containerRef}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder="Search videos, channels, playlists..."
+          className="rounded-full pl-10 pr-10 py-6 text-base border-2 focus:border-blue-500 transition-colors"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
+        />
+        {query && (
+          <button
+            onClick={clearSearch}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
 
       {showResults && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded shadow-md max-h-72 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="p-4 space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <SkeletonCard key={i} className="h-4 w-full" />
+            <div className="p-4 space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                    <div className="h-3 w-1/2 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  </div>
+                </div>
               ))}
             </div>
-          ) : results.length === 0 ? (
-            <div className="p-4 text-sm text-gray-500 dark:text-gray-400">No results found.</div>
+          ) : results.length === 0 && query ? (
+            <div className="p-6 text-center">
+              <Search size={32} className="mx-auto text-gray-400 mb-2" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">
+                No results found for "{query}"
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Try different keywords or check spelling
+              </p>
+            </div>
           ) : (
-            results.map((result, index) => (
-              <div
-                key={result.id}
-                className={`flex items-center px-4 py-2 cursor-pointer transition-colors ${
-                  index === selectedIndex
-                    ? "bg-gray-200 dark:bg-zinc-700"
-                    : "hover:bg-gray-100 dark:hover:bg-zinc-700"
-                }`}
-                onMouseEnter={() => setSelectedIndex(index)}
-                onClick={() => navigateTo(result)}
-              >
-                <span className="mr-2">{result.icon}</span>
-                <span>{result.title}</span>
-              </div>
-            ))
+            <div className="py-2">
+              {results.map((result, index) => (
+                <div
+                  key={`${result.type}-${result.id}`}
+                  className={`flex items-center px-4 py-3 cursor-pointer transition-all ${
+                    index === selectedIndex
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500"
+                      : "hover:bg-gray-50 dark:hover:bg-zinc-800 border-l-4 border-l-transparent"
+                  }`}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onClick={() => navigateTo(result)}
+                >
+                  {/* Icon or Avatar */}
+                  {result.type === "channel" && result.avatar ? (
+                    <img
+                      src={result.avatar}
+                      alt={result.title}
+                      className="w-10 h-10 rounded-full mr-3 object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center mr-3 flex-shrink-0">
+                      {result.icon}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-medium text-gray-900 dark:text-white truncate">
+                      {result.title}
+                    </span>
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <span className="capitalize">{result.type}</span>
+                      {result.type === "channel" && result.subscribers !== undefined && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span>{formatSubscribers(result.subscribers)}</span>
+                        </>
+                      )}
+                      {result.isUserOnly && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span className="text-blue-500">Private</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {results.length > 0 && (
+                <div className="border-t border-gray-200 dark:border-zinc-700 px-4 py-2">
+                  <button
+                    onClick={() => {
+                      navigate(`/search?q=${encodeURIComponent(query)}`);
+                      setShowResults(false);
+                    }}
+                    className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium py-2"
+                  >
+                    View all results for "{query}"
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

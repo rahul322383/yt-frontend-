@@ -574,7 +574,7 @@ const DashboardVideoCard = ({ video, onUpdated }) => {
     <div className="relative group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow w-[300px]">
       {/* Video Preview */}
       <div
-        className="relative aspect-video overflow-hidden rounded-lg bg-black cursor-pointer hover:shadow-lg transition-shadow"
+        className="relative aspect-video rounded-lg cursor-pointer hover:shadow-lg transition-shadow "
         onClick={handleVideoClick}
         onMouseMove={handleHover}
         onMouseEnter={handleMouseEnter}
@@ -583,7 +583,7 @@ const DashboardVideoCard = ({ video, onUpdated }) => {
         <video
           ref={videoRef}
           src={video?.videoUrl || undefined}
-          className="absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-200 hover:opacity-100"
+          className="absolute top-0 left-0 w-full h-full  transition-opacity duration-200 hover:opacity-100"
           muted
           preload="metadata"
           onError={() => toast.error("Failed loading video")}
