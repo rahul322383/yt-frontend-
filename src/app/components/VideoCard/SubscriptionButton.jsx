@@ -341,33 +341,54 @@ const SubscriptionButton = ({ channelId, isOwnChannel = false }) => {
                   transition={{ duration: 0.2 }}
                   className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10 overflow-hidden"
                 >
-                  <div className="p-2">
-                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
-                      Notifications
-                    </div>
-                    
-                    <button
-                      onClick={() => handleBellToggle("all")}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        notifyOption === "all" 
-                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" 
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      All notifications
-                    </button>
-                    
-                    <button
-                      onClick={() => handleBellToggle("none")}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        notifyOption === "none" 
-                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" 
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      No notifications
-                    </button>
-                  </div>
+      <div className="p-2">
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
+              Notifications
+            </div>
+
+            <button
+              onClick={() => handleBellToggle("all")}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                notifyOption === "all"
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              All notifications
+            </button>
+
+            <button
+              onClick={() => handleBellToggle("personalized")}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                notifyOption === "personalized"
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              Personalized
+            </button>
+
+            <button
+              onClick={() => handleBellToggle("none")}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                notifyOption === "none"
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              None
+            </button>
+         <button
+  className="w-full text-left px-3 py-2 mt-1 rounded-md text-sm bg-red-600 text-white hover:bg-red-700 transition-colors"
+  onClick={() => {
+    handleToggleSubscribe();
+    setShowDropdown(false);
+  }}
+>
+  Unsubscribe
+</button>
+
+          </div>
                 </motion.div>
               )}
             </AnimatePresence>
