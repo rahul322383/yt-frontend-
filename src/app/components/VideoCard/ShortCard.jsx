@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../../utils/axiosInstance.jsx";
-import ShareCard from "../../components/VideoCard/ShareCard.jsx";
+import ShareButton from "../../components/VideoCard/ShareCard.jsx";
 import CommentSection from "../../components/VideoCard/CommentSection.jsx";
 import { toast } from "react-toastify";
 
@@ -176,7 +176,7 @@ const ShortsPage = () => {
                   <span className="text-xs">{video.comments?.length || 0}</span>
                 </button>
 
-                <ShareCard videoId={video._id} />
+                <ShareButton videoId={video._id} />
               </div>
             </>
           )}

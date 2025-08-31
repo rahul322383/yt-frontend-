@@ -15,7 +15,6 @@ import {
 } from "react-icons/fa";
 import Cookies from "js-cookie";
 import API from "../../utils/axiosInstance.jsx";
-import ReactPlayer from "react-player";
 import "../../index.css";
 import { useAuth } from "../../context/AuthContext.jsx";
 import SearchBar from "./SearchBar.jsx";
@@ -46,15 +45,16 @@ const VideoCard = ({ video }) => {
       <div className="bg-blue-250 dark:bg-gray-800 hover:shadow-lg transition-all overflow-hidden cursor-pointer hover:scale-105 rounded-lg shadow-sm">
                       <div className="relative pb-[70.25%] overflow-hidden">
                 {video?.videoUrl && (
-                  <video
-                    src={video.videoUrl}
-                    className="absolute top-0 left-0 w-full h-full"
-                    controls
-                    muted
-                    onMouseEnter={(e) => e.target.play()}
-                    onMouseLeave={(e) => e.target.pause()}
-                    onClick={(e) => handlePreviewClick(video._id, e)}
-                  />
+                 <video
+  src={video.videoUrl}
+  className="absolute top-0 left-0 w-full h-full"
+  controls
+  muted
+  // playsInline
+  // onMouseEnter={(e) => e.target.play()}
+  // onMouseLeave={(e) => e.target.pause()}
+/>
+
                 )}
               </div>
 

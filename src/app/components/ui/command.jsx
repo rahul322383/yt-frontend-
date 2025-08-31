@@ -9,21 +9,27 @@ const Command = ({ children, className = '' }) => {
   );
 };
 
-// Command Input Component - Fixed version
+// Command Input Component - Fixed version (supports onChange + onValueChange)
 const CommandInput = ({ 
   placeholder = 'Search...', 
   value = '',
   onChange,
+  onValueChange, // ✅ allow Radix-style prop
   className = '', 
   ...props 
 }) => {
+  const handleChange = (e) => {
+    onChange?.(e.target.value);
+    onValueChange?.(e.target.value); // ✅ call if provided
+  };
+
   return (
     <div className="px-3 pt-3 pb-2 border-b">
       <input
         type="text"
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={handleChange}
         className={`w-full bg-transparent outline-none placeholder:text-gray-400 ${className}`}
         {...props}
       />

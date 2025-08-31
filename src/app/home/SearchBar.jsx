@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input } from "../components/ui/input";
-import SkeletonCard from "../components/Statscard/SkeletonCard";
+import { Input } from "../components/ui/Input";
 import { Video, User, Book, Search, X } from "lucide-react";
 import API from "../../utils/axiosInstance";
 
@@ -22,31 +21,33 @@ const SearchBar = () => {
       setResults([]);
       return;
     }
-    
+
     setLoading(true);
     try {
-      const res = await API.get(`/user/playlist/search?query=${encodeURIComponent(searchTerm)}`);
-      
-      if (res.data && res.data.success && Array.isArray(res.data.results)) {
+      const res = await API.get(
+        `/user/playlist/search?query=${encodeURIComponent(searchTerm)}`
+      );
+
+      if (res.data?.success && Array.isArray(res.data.results)) {
         const mapped = res.data.results.map((item) => {
           let icon;
           let route;
-          
+
           if (item.type === "video") {
             icon = <Video size={16} className="text-blue-500" />;
             route = `/video/${item.id}`;
           } else if (item.type === "channel") {
             icon = <User size={16} className="text-green-500" />;
-            route = `/channel/${item.channel || item.id}`;
+            route = `/channel/${item.channelId || item.id}`; // ✅ fixed channelId
           } else if (item.type === "playlist") {
             icon = <Book size={16} className="text-purple-500" />;
             route = `/playlist/${item.id}`;
           }
-          
-          return { 
-            ...item, 
+
+          return {
+            ...item,
             icon,
-            route
+            route,
           };
         });
         setResults(mapped);
@@ -89,7 +90,6 @@ const SearchBar = () => {
       if (results[selectedIndex]) {
         navigateTo(results[selectedIndex]);
       } else if (query.trim()) {
-        // Navigate to search results page if no item is selected
         navigate(`/search?q=${encodeURIComponent(query.trim())}`);
         setShowResults(false);
       }
@@ -100,17 +100,7 @@ const SearchBar = () => {
 
   const navigateTo = (item) => {
     if (!item) return;
-    
-    if (item.route) {
-      navigate(item.route);
-    } else if (item.type === "video") {
-      navigate(`/video/${item.id}`);
-    } else if (item.type === "channel") {
-      navigate(`/channel/${item.channel || item.id}`);
-    } else if (item.type === "playlist") {
-      navigate(`/playlist/${item.id}`);
-    }
-    
+    navigate(item.route);
     setShowResults(false);
     setQuery("");
   };
@@ -139,12 +129,13 @@ const SearchBar = () => {
   }, []);
 
   const formatSubscribers = (count) => {
+    if (!count && count !== 0) return "";
     if (count >= 1000000) {
       return `${(count / 1000000).toFixed(1)}M subscribers`;
     } else if (count >= 1000) {
       return `${(count / 1000).toFixed(1)}K subscribers`;
     }
-    return `${count} subscriber${count !== 1 ? 's' : ''}`;
+    return `${count} subscriber${count !== 1 ? "s" : ""}`;
   };
 
   return (
@@ -208,7 +199,6 @@ const SearchBar = () => {
                   onMouseEnter={() => setSelectedIndex(index)}
                   onClick={() => navigateTo(result)}
                 >
-                  {/* Icon or Avatar */}
                   {result.type === "channel" && result.avatar ? (
                     <img
                       src={result.avatar}
@@ -227,12 +217,13 @@ const SearchBar = () => {
                     </span>
                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <span className="capitalize">{result.type}</span>
-                      {result.type === "channel" && result.subscribers !== undefined && (
-                        <>
-                          <span className="mx-2">•</span>
-                          <span>{formatSubscribers(result.subscribers)}</span>
-                        </>
-                      )}
+                      {result.type === "channel" &&
+                        result.subscribers !== undefined && (
+                          <>
+                            <span className="mx-2">•</span>
+                            <span>{formatSubscribers(result.subscribers)}</span>
+                          </>
+                        )}
                       {result.isUserOnly && (
                         <>
                           <span className="mx-2">•</span>
@@ -243,7 +234,7 @@ const SearchBar = () => {
                   </div>
                 </div>
               ))}
-              
+
               {results.length > 0 && (
                 <div className="border-t border-gray-200 dark:border-zinc-700 px-4 py-2">
                   <button

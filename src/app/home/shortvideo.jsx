@@ -1,7 +1,7 @@
 // ShortsPage.jsx
 import React, { useEffect, useState, useRef } from "react";
 import API from "../../utils/axiosInstance.jsx";
-import ShareCard from ".././components/VideoCard/shareCard.jsx";
+import ShareButton from ".././components/VideoCard/ShareCard.jsx";
 import CommentSection from "../components/VideoCard/CommentSection.jsx";
 
 const ShortsPage = () => {
@@ -168,7 +168,7 @@ const ShortsPage = () => {
                   <span className="text-xs">{video.comments?.length || 0}</span>
                 </button>
 
-                <ShareCard videoId={video._id} />
+                <ShareButton videoId={video._id} />
               </div>
             </>
           )}

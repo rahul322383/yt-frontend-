@@ -1,15 +1,16 @@
+/* eslint-disable no-unused-vars */
 "use client"
 
 import { useState } from "react";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
+import API from "../../utils/axiosInstance";
 
-// ✅ Match backend: must include uppercase, lowercase, number, special char, 8+ chars
+// ✅ Schema validation
 const schema = z
   .object({
     currentPassword: z.string().min(6, "Current password is required"),
@@ -40,13 +41,14 @@ const ResetPassword = () => {
     resolver: zodResolver(schema),
   });
 
+  // ✅ Submit handler
   const onSubmit = async (data) => {
     setLoading(true);
     const token = localStorage.getItem("accessToken");
 
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/users/change-password", // ✅ Full backend URL
+      const res = await API.post(
+        "/users/change-password",
         {
           currentPassword: data.currentPassword,
           newPassword: data.newPassword,
@@ -54,15 +56,16 @@ const ResetPassword = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          withCredentials: true,
         }
       );
 
-      toast.success("Password reset successfully!");
+      toast.success(res?.data?.message || "Password reset successfully!");
       reset();
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
+      console.error("❌ Backend Error:", err?.response?.data);
       toast.error(err?.response?.data?.message || "Failed to reset password");
     } finally {
       setLoading(false);

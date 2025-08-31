@@ -25,6 +25,28 @@ export const AuthProvider = ({ children }) => {
     setAuth({ user: null, isAuthenticated: false, loading: false });
   }, []);
 
+  //login
+    const login = useCallback((user, accessToken, refreshToken) => {
+    try {
+      // save tokens
+      Cookies.set("accessToken", accessToken, { expires: 7 });
+      localStorage.setItem("accessToken", accessToken);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+
+      // save user
+      localStorage.setItem("userData", JSON.stringify(user));
+
+      // update state
+      setAuth({
+        user,
+        isAuthenticated: true,
+        loading: false,
+      });
+    } catch (e) {
+      console.error("Login failed:", e);
+    }
+  }, []);
+
   // 🔹 Logout helper
   const logout = useCallback(() => {
     clearAuthData();
@@ -70,6 +92,7 @@ export const AuthProvider = ({ children }) => {
         clearAuthData,
         checkAuth,
         logout, // ✅ available everywhere
+        login,  // ✅ available everywhere
       }}
     >
       {children}

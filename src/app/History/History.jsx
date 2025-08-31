@@ -163,11 +163,11 @@ const HistoryPage = () => {
         className="absolute top-0 left-0 w-full h-full pointer-cursor"
         muted
         playsInline
-        onMouseEnter={(e) => e.target.play()}
-        onMouseLeave={(e) => {
-          e.target.pause();
-          e.target.currentTime = 0;
-        }}
+        // onMouseEnter={(e) => e.target.play()}
+        // onMouseLeave={(e) => {
+        //   e.target.pause();
+        //   e.target.currentTime = 0;
+        // }}
         onClick={() => navigate(`/video/${video._id}`)}
       />
     </div>
@@ -216,7 +216,8 @@ const HistoryPage = () => {
 
       {/* Watched Time */}
       <div className="text-xs text-gray-500 mt-1">
-        Watched: {new Date(video.createdAt).toLocaleString()}
+       Watched: {new Date(video.watchedAt || video.createdAt).toLocaleString()}
+
       </div>
     </div>
   </div>

@@ -102,11 +102,11 @@ const AnalyticsSection = () => {
   };
 
   const handleVideoClick = (video) => {
-    if (video.videoUrl) {
-      setSelectedVideo(video);
-    } else if (video.videoId) {
+    // if (video.videoUrl) {
+    //   setSelectedVideo(video);
+    // } else if (video.videoId) {
       navigate(`/video/${video.videoId}`);
-    }
+    // }
   };
 
   const handlePlaylistClick = (playlistId) => {

@@ -19,29 +19,39 @@ import {
   FaEnvelope,
   FaImage,
   FaSpinner,
+  FaExclamationTriangle,
 } from "react-icons/fa";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as z from "zod";
 import PasswordStrengthBar from "react-password-strength-bar";
 import API from "../../utils/axiosInstance.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
+// Updated schema to match backend validation
 const schema = z.object({
-  fullName: z.string().min(3, "Full Name is required"),
-  username: z.string().min(3, "Username is required"),
+  fullName: z.string()
+    .min(3, "Full Name must be at least 3 characters")
+    .refine((val) => !/[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{S}]/gu.test(val), {
+      message: "Full name cannot contain emojis or symbols"
+    }),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(20, "Username must be less than 20 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
+  password: z.string()
+    .min(6, "Password must be at least 6 characters")
     .regex(/[A-Z]/, "Must contain an uppercase letter")
     .regex(/[a-z]/, "Must contain a lowercase letter")
     .regex(/[0-9]/, "Must contain a number")
     .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
 });
 
-const SignUpPage = ({ setUser }) => {
+const SignUpPage = () => {
+  const { login } = useAuth(); // Use the login function from AuthContext
   const [darkMode, setDarkMode] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState({ google: false, github: false });
   const [error, setError] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [avatar, setAvatar] = useState(null);
@@ -61,6 +71,7 @@ const SignUpPage = ({ setUser }) => {
     watch,
     trigger,
     setError: setFormError,
+    clearErrors,
   } = useForm({ resolver: zodResolver(schema) });
 
   useEffect(() => {
@@ -76,6 +87,19 @@ const SignUpPage = ({ setUser }) => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+        setError("Avatar must be a JPEG or PNG image");
+        return;
+      }
+      
+      // Validate file size
+      if (file.size > 2 * 1024 * 1024) {
+        setError("Avatar size must be under 2MB");
+        return;
+      }
+      
+      setError("");
       setAvatar(file);
       setAvatarPreview(URL.createObjectURL(file));
     }
@@ -84,15 +108,28 @@ const SignUpPage = ({ setUser }) => {
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+        setError("Cover image must be a JPEG or PNG image");
+        return;
+      }
+      
+      // Validate file size
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Cover image size must be under 5MB");
+        return;
+      }
+      
+      setError("");
       setCoverImage(file);
       setCoverPreview(URL.createObjectURL(file));
     }
   };
 
   const validateFiles = () => {
-    if (!avatar) return "Avatar is required.";
-    if (!['image/jpeg', 'image/png'].includes(avatar.type)) return "Only JPEG/PNG allowed for avatar.";
-    if (avatar.size > 2 * 1024 * 1024) return "Avatar size must be under 2MB.";
+    if (signupMode === "normal" && !avatar) {
+      return "Avatar is required.";
+    }
     return null;
   };
 
@@ -113,17 +150,21 @@ const SignUpPage = ({ setUser }) => {
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, val]) => val && formData.append(key, val));
-      formData.append("avatar", avatar);
+      
+      if (avatar) formData.append("avatar", avatar);
       if (coverImage) formData.append("coverImage", coverImage);
 
       const res = await API.post("/users/register", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
         withCredentials: true,
       });
 
       const { accessToken, refreshToken, user } = res.data?.data || {};
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-      setUser(user);
+      
+      // Use the login function from AuthContext instead of setUser
+      login(user, accessToken, refreshToken);
 
       setShowPopup(true);
       setTimeout(() => {
@@ -132,13 +173,15 @@ const SignUpPage = ({ setUser }) => {
       }, 1500);
     } catch (err) {
       const msg = err?.response?.data?.message || "Signup failed. Try again.";
-      console.error("[Signup Error]", msg);
+      console.error("[Signup Error]", err.response?.data || err);
       setError(msg);
 
-      if (err?.response?.data?.duplicateFields) {
-        const { duplicateFields } = err.response.data;
-        for (const field of Object.keys(duplicateFields)) {
-          setFormError(field, { type: "manual", message: `${field} already exists` });
+      // Handle duplicate field errors
+      if (err?.response?.data?.message?.includes("already")) {
+        if (err.response.data.message.includes("email") || err.response.data.message.includes("Email")) {
+          setFormError("email", { type: "manual", message: "Email is already registered" });
+        } else if (err.response.data.message.includes("username") || err.response.data.message.includes("Username")) {
+          setFormError("username", { type: "manual", message: "Username is already taken" });
         }
       }
     } finally {
@@ -146,10 +189,21 @@ const SignUpPage = ({ setUser }) => {
     }
   };
 
+  const handleSocialSignup = (provider) => {
+    setSocialLoading(prev => ({ ...prev, [provider]: true }));
+    setError("");
+    
+    // Redirect to OAuth endpoint
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/users/auth/${provider}`;
+    
+    // Fallback in case redirect fails
+    setTimeout(() => {
+      setSocialLoading(prev => ({ ...prev, [provider]: false }));
+      setError(`${provider} authentication failed. Please try again.`);
+    }, 5000);
+  };
+
   const handleNavigateToLogin = () => navigate("/login");
-
-  
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-gray-900 dark:from-gray-900 dark:to-black flex items-center justify-center p-4 md:p-6 relative overflow-hidden">
@@ -210,8 +264,9 @@ const SignUpPage = ({ setUser }) => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-center"
+                className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-center flex items-center justify-center gap-2"
               >
+                <FaExclamationTriangle />
                 {error}
               </motion.div>
             )}
@@ -239,7 +294,11 @@ const SignUpPage = ({ setUser }) => {
                   ? "bg-white text-gray-900 shadow-md"
                   : "bg-white/10 text-white hover:bg-white/20"
               }`}
-              onClick={() => setSignupMode("normal")}
+              onClick={() => {
+                setSignupMode("normal");
+                setError("");
+                clearErrors();
+              }}
             >
               Regular Sign Up
             </motion.button>
@@ -251,7 +310,11 @@ const SignUpPage = ({ setUser }) => {
                   ? "bg-white text-gray-900 shadow-md"
                   : "bg-white/10 text-white hover:bg-white/20"
               }`}
-              onClick={() => setSignupMode("social")}
+              onClick={() => {
+                setSignupMode("social");
+                setError("");
+                clearErrors();
+              }}
             >
               Social Sign Up
             </motion.button>
@@ -339,6 +402,7 @@ const SignUpPage = ({ setUser }) => {
                       <input
                         id="password"
                         {...register("password")}
+                        autoComplete="new-password"
                         placeholder="••••••••"
                         type={passwordVisible ? "text" : "password"}
                         className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition"
@@ -361,7 +425,6 @@ const SignUpPage = ({ setUser }) => {
                       <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
                     )}
                   </div>
-
 
                   <motion.button
                     type="button"
@@ -403,7 +466,7 @@ const SignUpPage = ({ setUser }) => {
                         )}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg, image/png, image/jpg"
                           onChange={handleAvatarChange}
                           className="hidden"
                         />
@@ -435,7 +498,7 @@ const SignUpPage = ({ setUser }) => {
                         )}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg, image/png, image/jpg"
                           onChange={handleCoverChange}
                           className="hidden"
                         />
@@ -489,21 +552,45 @@ const SignUpPage = ({ setUser }) => {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/users/auth/google`}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 transition-all"
+                  onClick={() => handleSocialSignup("google")}
+                  disabled={socialLoading.google}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 transition-all disabled:opacity-50"
                 >
-                  <FaGoogle className="text-red-500" size={18} />
+                  {socialLoading.google ? (
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <FaSpinner />
+                    </motion.span>
+                  ) : (
+                    <FaGoogle className="text-red-500" size={18} />
+                  )}
                   Sign up with Google
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/users/auth/github`}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 transition-all"
+                  onClick={() => handleSocialSignup("github")}
+                  disabled={socialLoading.github}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 transition-all disabled:opacity-50"
                 >
-                  <FaGithub size={18} />
+                  {socialLoading.github ? (
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <FaSpinner />
+                    </motion.span>
+                  ) : (
+                    <FaGithub size={18} />
+                  )}
                   Sign up with GitHub
                 </motion.button>
+              </div>
+              
+              <div className="text-center text-white/60 text-sm">
+                <p>You'll be redirected to the provider for authentication</p>
               </div>
             </motion.div>
           )}
@@ -524,4 +611,3 @@ const SignUpPage = ({ setUser }) => {
 };
 
 export default SignUpPage;
-

@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 "use client";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -48,7 +50,7 @@ import Label from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import AvatarUpload from "../components/common/AvatarUpload";
-import CoverUpload from "../components/common/Cover";
+import CoverUpload from "../components/common/cover";
 import ProgressLabelCard from "../components/ui/progress";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "../components/ui/command";
 
@@ -162,50 +164,25 @@ export default function ProfilePage() {
     setEditingField(editingField === field ? null : field);
   };
 
-  const handleAvatarUpload = async (file) => {
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("avatar", file);
-      
-      const { data } = await API.post("/users/upload-avatar", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      
-      setValue("avatar", data.data.avatarUrl);
-      setRefreshKey((prev) => prev + 1);
-      toast.success("Avatar uploaded successfully");
-    } catch (error) {
-      console.error("Avatar upload error:", error);
-      toast.error(error.response?.data?.message || "Avatar upload failed");
-    } finally {
-      setIsUploading(false);
-    }
+  const handleAvatarUpload = (avatarUrl) => {
+    setValue("avatar", avatarUrl);
+    setRefreshKey((prev) => prev + 1);
+    // Auto-save when avatar is uploaded
+    handleSubmit(onSubmit)();
   };
 
-  const handleCoverUpload = async (file) => {
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("coverImage", file);
-      
-      const { data } = await API.post("/users/upload-cover", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      
-      setValue("coverImage", data.data.coverUrl);
-      setRefreshKey((prev) => prev + 1);
-      toast.success("Cover photo updated");
-    } catch (error) {
-      console.error("Cover upload error:", error);
-      toast.error(error.response?.data?.message || "Cover upload failed");
-    } finally {
-      setIsUploading(false);
-    }
+  const handleAvatarDelete = () => {
+    setValue("avatar", null);
+    setRefreshKey((prev) => prev + 1);
+    // Auto-save when avatar is deleted
+    handleSubmit(onSubmit)();
+  };
+
+  const handleCoverUpload = (coverUrl) => {
+    setValue("coverImage", coverUrl);
+    setRefreshKey((prev) => prev + 1);
+    // Auto-save when cover is uploaded
+    handleSubmit(onSubmit)();
   };
 
   const addSkill = () => {
@@ -298,8 +275,9 @@ export default function ProfilePage() {
                   key={`cover-${refreshKey}`}
                   coverUrl={watch("coverImage") || profile?.coverImage}
                   onUpload={handleCoverUpload}
-                  isUploading={isUploading}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full"
+                  aspectRatio="16/9"
+                  maxSizeMB={5}
                 />
               </div>
 
@@ -309,8 +287,9 @@ export default function ProfilePage() {
                   key={`avatar-${refreshKey}`}
                   avatarUrl={watch("avatar") || profile?.avatar}
                   onUpload={handleAvatarUpload}
-                  isUploading={isUploading}
-                  className="border-4 border-background rounded-full shadow-xl w-32 h-32 sm:w-40 sm:h-40"
+                  onDelete={handleAvatarDelete}
+                  size="xl"
+                  className="border-4 border-background rounded-full shadow-xl"
                 />
               </div>
 

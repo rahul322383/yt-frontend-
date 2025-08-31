@@ -331,7 +331,7 @@ const Dashboard = () => {
                 You haven't uploaded any videos yet
               </p>
               <Link
-                to="/upload"
+                to="/playlists"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base"
               >
                 <Plus size={18} className="mr-2" />
