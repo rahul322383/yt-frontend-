@@ -1,3 +1,5 @@
+
+
 /* eslint-disable no-unused-vars */
 "use client";
 
@@ -24,7 +26,7 @@ const SOCKET_URL = "http://localhost:8000";
 const socket = io(SOCKET_URL, { autoConnect: false });
 
 const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
-  const { type, message, videoId, createdAt, read = false, sender } = notification;
+  const { type, message, videoId, createdAt, isRead = false, sender } = notification;
 
   const getIcon = () => {
     switch (type) {
@@ -59,9 +61,9 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.2 }}
-      className={`relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 ${!read ? "ring-1 ring-blue-400 shadow-sm" : ""} transition-all duration-200 hover:shadow-md`}
+      className={`relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 ${!isRead ? "ring-1 ring-blue-400 shadow-sm" : ""} transition-all duration-200 hover:shadow-md`}
     >
-      <div className={`relative flex items-start gap-4 p-4 ${!read ? "bg-blue-50/30 dark:bg-blue-900/10" : "bg-white dark:bg-gray-800"} transition-colors duration-200`}>
+      <div className={`relative flex items-start gap-4 p-4 ${!isRead ? "bg-blue-50/30 dark:bg-blue-900/10" : "bg-white dark:bg-gray-800"} transition-colors duration-200`}>
         
         <div className="flex-shrink-0">
           {sender?.avatar ? (
@@ -79,7 +81,7 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
               {getTypeLabel()}
             </span>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              {!read && (
+              {!isRead && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onMarkRead(notification._id); }}
                   className="p-1.5 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-full transition-colors"
@@ -90,10 +92,10 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(notification._id); }}
-                className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors"
-                title="Delete notification"
-              >
-                <FaTrash size={14} />
+                  className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                  title="Delete notification"
+                >
+                  <FaTrash size={14} />
               </button>
             </div>
           </div>
@@ -136,7 +138,7 @@ const NotificationPage = () => {
       if (res?.data?.success) {
         const fetched = res.data.data || [];
         setNotifications(fetched);
-        setUnreadCount(fetched.filter(n => !n.read).length);
+        setUnreadCount(fetched.filter(n => !n.isRead).length);
       }
     } catch (err) {
       console.error(err);
@@ -175,9 +177,13 @@ const NotificationPage = () => {
   const markAsRead = async (id) => {
     try {
       await API.post(`/notifications/${id}/mark-read`);
-      setNotifications(prev => prev.map(n => (n._id === id ? { ...n, read: true } : n)));
-      setUnreadCount(prev => prev - 1);
-    } catch { toast.error("Failed to mark notification as read"); }
+      setNotifications(prev =>
+        prev.map(n => (n._id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount(prev => Math.max(prev - 1, 0));
+    } catch {
+      toast.error("Failed to mark notification as read");
+    }
   };
 
   const deleteNotification = async (id) => {
@@ -185,16 +191,20 @@ const NotificationPage = () => {
       await API.delete(`/notifications/${id}`);
       const deleted = notifications.find(n => n._id === id);
       setNotifications(prev => prev.filter(n => n._id !== id));
-      if (deleted && !deleted.read) setUnreadCount(prev => prev - 1);
-    } catch { toast.error("Failed to delete notification"); }
+      if (deleted && !deleted.isRead) setUnreadCount(prev => Math.max(prev - 1, 0));
+    } catch {
+      toast.error("Failed to delete notification");
+    }
   };
 
   const markAllAsRead = async () => {
     try {
       await API.post("/notifications/mark-all-read");
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch { toast.error("Failed to mark all notifications as read"); }
+    } catch {
+      toast.error("Failed to mark all notifications as read");
+    }
   };
 
   if (!isAuthenticated) return (

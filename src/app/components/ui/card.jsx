@@ -1,9 +1,6 @@
+/* eslint-disable no-unused-vars */
 import React from "react";
 import { cn } from "../../../utils/cn.jsx";
-
-/**
- * Reusable Card component with variants and full composition
- */
 export const Card = ({ 
   children, 
   className,
