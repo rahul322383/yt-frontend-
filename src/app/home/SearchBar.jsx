@@ -27,6 +27,7 @@ const SearchBar = () => {
       const res = await API.get(
         `/user/playlist/search?query=${encodeURIComponent(searchTerm)}`
       );
+      
 
       if (res.data?.success && Array.isArray(res.data.results)) {
         const mapped = res.data.results.map((item) => {
@@ -38,7 +39,7 @@ const SearchBar = () => {
             route = `/video/${item.id}`;
           } else if (item.type === "channel") {
             icon = <User size={16} className="text-green-500" />;
-            route = `/channel/${item.channelId || item.id}`; // ✅ fixed channelId
+            route = `/channel/${item.channel}`; // ✅ fixed channelId
           } else if (item.type === "playlist") {
             icon = <Book size={16} className="text-purple-500" />;
             route = `/playlist/${item.id}`;

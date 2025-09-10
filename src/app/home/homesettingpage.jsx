@@ -29,7 +29,8 @@ import {
 } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import { ComputerDesktopIcon } from "@heroicons/react/24/outline";
-import { ThemeContext } from "../themecontext/ThemeContext"; // Fixed import path
+import { ThemeContext } from "../ThemeContext/ThemeContext"
+
 
 const SettingItem = ({ label, children, description, id, icon }) => (
   <div className="mb-6 p-5 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/70 dark:border-gray-700/70 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.005]">

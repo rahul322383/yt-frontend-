@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-"use client"
+"use client";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
+import zxcvbn from "zxcvbn"; // ✅ strength checker
 import API from "../../utils/axiosInstance";
 
 // ✅ Schema validation
@@ -31,6 +32,7 @@ const schema = z
 const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(null);
 
   const {
     register,
@@ -41,8 +43,23 @@ const ResetPassword = () => {
     resolver: zodResolver(schema),
   });
 
+  // ✅ Password strength handler
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    if (value) {
+      setPasswordStrength(zxcvbn(value));
+    } else {
+      setPasswordStrength(null);
+    }
+  };
+
   // ✅ Submit handler
   const onSubmit = async (data) => {
+    if (passwordStrength && passwordStrength.score < 3) {
+      toast.error("⚠️ Password is too weak. Try a stronger one.");
+      return;
+    }
+
     setLoading(true);
     const token = localStorage.getItem("accessToken");
 
@@ -109,6 +126,10 @@ const ResetPassword = () => {
           <input
             type={showPassword ? "text" : "password"}
             {...register("newPassword")}
+            onChange={(e) => {
+              handlePasswordChange(e);
+              return register("newPassword").onChange(e);
+            }}
             className="w-full p-4 pr-10 border rounded-lg hover:border-gray-400 dark:bg-gray-700 dark:text-white"
             placeholder="Enter new password"
           />
@@ -125,6 +146,32 @@ const ResetPassword = () => {
           <p className="text-red-500 text-sm mt-1">
             {errors.newPassword.message}
           </p>
+        )}
+
+        {/* ✅ Strength Meter */}
+        {passwordStrength && (
+          <div className="mt-2">
+            <div className="h-2 rounded bg-gray-200 dark:bg-gray-600">
+              <div
+                className={`h-2 rounded transition-all ${
+                  [
+                    "bg-red-500",
+                    "bg-orange-500",
+                    "bg-yellow-500",
+                    "bg-green-500",
+                    "bg-green-600",
+                  ][passwordStrength.score]
+                }`}
+                style={{ width: `${(passwordStrength.score + 1) * 20}%` }}
+              />
+            </div>
+            <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+              {passwordStrength.feedback.suggestions[0] ||
+                ["Very Weak", "Weak", "Fair", "Good", "Strong"][
+                  passwordStrength.score
+                ]}
+            </p>
+          </div>
         )}
       </div>
 
