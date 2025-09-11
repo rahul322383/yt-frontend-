@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import { ComputerDesktopIcon } from "@heroicons/react/24/outline";
-import { ThemeContext } from "../ThemeContext/ThemeContext.jsx"
+// import { ThemeContext } from "../../ThemeContext/ThemeContext"
 
 
 const SettingItem = ({ label, children, description, id, icon }) => (
@@ -87,6 +87,8 @@ const SettingsPageHome = () => {
     darkModeStart: "20:00",
     darkModeEnd: "07:00",
   });
+
+  // const { setThemePreference } = useContext(ThemeContext);
 
   const [uiState, setUiState] = useState({
     showDeleteModal: false,
