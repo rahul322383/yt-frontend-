@@ -1,10 +1,7 @@
-
-
-
 /* eslint-disable no-unused-vars */
 
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../../../utils/axiosInstance.jsx";
 import SubscriptionButton from "../VideoCard/SubscriptionButton.jsx";
@@ -46,7 +43,6 @@ const VideoDetailPage = () => {
   const [watchLater, setWatchLater] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [isSidebarSticky, setIsSidebarSticky] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem("darkMode");
@@ -65,6 +61,11 @@ const VideoDetailPage = () => {
   const token = localStorage.getItem("accessToken");
   const isAuth = !!token;
   const isOwner = video?.isOwner;
+
+  // Memoized shuffled playlist
+  const shuffledPlaylist = useMemo(() => {
+    return shuffle ? [...playlistVideos].sort(() => 0.5 - Math.random()) : playlistVideos;
+  }, [playlistVideos, shuffle]);
 
   // Apply dark/light mode to the document
   useEffect(() => {
@@ -86,6 +87,18 @@ const VideoDetailPage = () => {
     localStorage.setItem("shuffle", JSON.stringify(shuffle));
   }, [autoplay, shuffle]);
 
+  // Escape key handler for modals
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setShowEditModal(false);
+        setShowDeleteModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -106,8 +119,8 @@ const VideoDetailPage = () => {
       if (token) {
         try {
           const userRes = await API.get("/users/me");
-          setCurrentUser(userRes.data.user); 
-          setWatchLater(userRes.data?.user?.watchLater?.includes(videoId) || false);
+          setCurrentUser(userRes.data.data); 
+          setWatchLater(userRes.data?.data?.watchLater?.includes(videoId) || false);
         } catch (err) {
           console.error("User fetch error:", err);
           // Continue without user data but don't break the app
@@ -121,18 +134,19 @@ const VideoDetailPage = () => {
     }
   };
 
-  const handleEnded = () => {
+  const handleEnded = useCallback(() => {
     if (!autoplay || !playlistVideos.length) return;
     
-    const list = shuffle 
-      ? [...playlistVideos].sort(() => 0.5 - Math.random()) 
-      : playlistVideos;
-      
+    const list = shuffledPlaylist;
     const currentIndex = list.findIndex(v => v._id === videoId);
+    
+    // Guard clause for when current video isn't found in the list
+    if (currentIndex === -1) return;
+    
     if (currentIndex < list.length - 1) {
       navigate(`/video/${list[currentIndex + 1]._id}`);
     }
-  };
+  }, [autoplay, playlistVideos, shuffledPlaylist, videoId, navigate]);
 
   const toggleWatchLater = async () => {
     try {
@@ -246,24 +260,6 @@ const VideoDetailPage = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handlePreviewClick = (videoId, event) => {
-    event.stopPropagation();
-    navigate(`/video/${videoId}`);
-  };
-
-  // Handle sidebar sticky behavior on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      if (sidebarRef.current) {
-        const sidebarRect = sidebarRef.current.getBoundingClientRect();
-        setIsSidebarSticky(sidebarRect.top <= 20);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
@@ -369,6 +365,7 @@ const VideoDetailPage = () => {
                     <button 
                       onClick={() => setShowMenu(!showMenu)}
                       className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                      aria-label="More options"
                     >
                       <BsThreeDotsVertical className="text-xl text-gray-700 dark:text-gray-300" />
                     </button>
@@ -438,6 +435,7 @@ const VideoDetailPage = () => {
                       ? "bg-yellow-500 text-black hover:bg-yellow-400" 
                       : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                   }`}
+                  aria-label={autoplay ? "Disable autoplay" : "Enable autoplay"}
                 >
                   {autoplay ? <FaPause /> : <FaPlay />}
                   <span className="hidden sm:inline">Autoplay</span>
@@ -451,6 +449,7 @@ const VideoDetailPage = () => {
                         ? "bg-yellow-500 text-black hover:bg-yellow-400" 
                         : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                     }`}
+                    aria-label={shuffle ? "Disable shuffle" : "Enable shuffle"}
                   >
                     <FaRandom />
                     <span className="hidden sm:inline">Shuffle</span>
@@ -490,9 +489,9 @@ const VideoDetailPage = () => {
           {/* Playlist Sidebar (30% width on lg+) */}
           <div 
             ref={sidebarRef}
-            className={`w-full lg:w-[30%] ${isSidebarSticky ? 'lg:sticky lg:top-4' : ''}`}
+            className="w-full lg:w-[30%] lg:sticky lg:top-4"
           >
-            <div className={`bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 ${isSidebarSticky ? 'lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto' : ''}`}>
+            <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Up Next</h3>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -501,7 +500,7 @@ const VideoDetailPage = () => {
               </div>
               
               <div className="space-y-3">
-                {(shuffle ? [...playlistVideos].sort(() => 0.5 - Math.random()) : playlistVideos)
+                {shuffledPlaylist
                   .filter(v => v._id !== videoId)
                   .slice(0, 10)
                   .map((v) => (
@@ -576,6 +575,7 @@ const VideoDetailPage = () => {
               <button 
                 onClick={() => setShowEditModal(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                aria-label="Close edit modal"
               >
                 <IoClose size={24} />
               </button>
@@ -644,6 +644,7 @@ const VideoDetailPage = () => {
               <button 
                 onClick={() => setShowDeleteModal(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                aria-label="Close delete modal"
               >
                 <IoClose size={24} />
               </button>
