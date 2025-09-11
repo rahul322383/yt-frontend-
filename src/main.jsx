@@ -4,7 +4,7 @@ import App from "./App";
 import "./index.css";
 import { AuthProvider } from "./context/AuthContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { ThemeProvider } from "./app/themecontext/themecontext";
+import { ThemeProvider } from "./ThemeContext/ThemeContext";
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
