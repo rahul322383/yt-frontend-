@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import { ComputerDesktopIcon } from "@heroicons/react/24/outline";
-import { ThemeContext } from "../ThemeContext/ThemeContext"
+import { ThemeContext } from "../ThemeContext/ThemeContext.jsx"
 
 
 const SettingItem = ({ label, children, description, id, icon }) => (
