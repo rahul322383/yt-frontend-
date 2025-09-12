@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = "http://localhost:8000/api/v1";
+const baseURL = "https://yt-backend-psdu.onrender.com/api/v1";
 
 const API = axios.create({
   baseURL,

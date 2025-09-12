@@ -5,7 +5,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://yt-backend-psdu.onrender.com/api/v1",
   withCredentials: true,
 });
 
